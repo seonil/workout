@@ -183,16 +183,42 @@ const Timer = ({ isActive, time, onStart, onStop, onReset }) => {
   );
 };
 
-/* 운동 기록 폼 컴포넌트 */
-const ExerciseForm = ({ bodyPart, exercises, onAddExercise }) => {
+/* 운동 기록 폼 컴포넌트 - 부위 선택 후 세부 운동 선택 */
+const ExerciseForm = ({ exercises, onAddExercise }) => {
+  const bodyParts = Object.keys(exercises);
+  const [selectedBodyPart, setSelectedBodyPart] = useState(bodyParts[0] || '하체');
   const [selectedExercise, setSelectedExercise] = useState('');
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [sets, setSets] = useState('3');
   const [notes, setNotes] = useState('');
 
+  /* 부위가 바뀌면 운동/입력값 초기화 */
+  useEffect(() => {
+    setSelectedExercise('');
+    setWeight('');
+    setReps('');
+    setSets('3');
+  }, [selectedBodyPart]);
+
+  /* 운동 선택 시 기본값 프리필 */
+  const handleExerciseChange = (e) => {
+    const name = e.target.value;
+    setSelectedExercise(name);
+    const exercise = exercises[selectedBodyPart]?.find(ex => ex.name === name);
+    if (exercise) {
+      setWeight(exercise.weight?.toString() ?? '');
+      setReps(exercise.reps?.toString() ?? '');
+      setSets(exercise.sets?.toString() ?? '3');
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!selectedBodyPart) {
+      alert('운동 부위를 선택하세요.');
+      return;
+    }
     if (!selectedExercise || !weight || !reps) {
       alert('운동, 무게, 반복수를 모두 입력해주세요.');
       return;
@@ -205,11 +231,13 @@ const ExerciseForm = ({ bodyPart, exercises, onAddExercise }) => {
       sets: parseInt(sets),
       notes,
       date: new Date().toISOString(),
-      bodyPart
+      bodyPart: selectedBodyPart
     };
     onAddExercise(exerciseData);
+    setSelectedExercise('');
     setWeight('');
     setReps('');
+    setSets('3');
     setNotes('');
   };
 
@@ -220,28 +248,37 @@ const ExerciseForm = ({ bodyPart, exercises, onAddExercise }) => {
     return w * r * s;
   };
 
+  const currentExerciseList = exercises[selectedBodyPart] || [];
+
   return (
     <form className="workout-form" onSubmit={handleSubmit}>
-      <div className="form-group">
-        <label className="form-label">운동 선택</label>
-        <select
-          className="form-select"
-          value={selectedExercise}
-          onChange={(e) => {
-            setSelectedExercise(e.target.value);
-            const exercise = exercises[bodyPart]?.find(ex => ex.name === e.target.value);
-            if (exercise) {
-              setWeight(exercise.weight.toString());
-              setReps(exercise.reps.toString());
-              setSets(exercise.sets.toString());
-            }
-          }}
-        >
-          <option value="">운동을 선택하세요</option>
-          {exercises[bodyPart]?.map((exercise, idx) => (
-            <option key={idx} value={exercise.name}>{exercise.name}</option>
-          ))}
-        </select>
+      <div className="form-row">
+        <div className="form-group">
+          <label className="form-label">부위 선택</label>
+          <select
+            className="form-select"
+            value={selectedBodyPart}
+            onChange={(e) => setSelectedBodyPart(e.target.value)}
+          >
+            {bodyParts.map((part) => (
+              <option key={part} value={part}>{part}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">운동 선택</label>
+          <select
+            className="form-select"
+            value={selectedExercise}
+            onChange={handleExerciseChange}
+          >
+            <option value="">운동을 선택하세요</option>
+            {currentExerciseList.map((exercise, index) => (
+              <option key={index} value={exercise.name}>{exercise.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="form-row">
@@ -273,7 +310,7 @@ const ExerciseForm = ({ bodyPart, exercises, onAddExercise }) => {
   );
 };
 
-/* 라이브러리 컴포넌트 (훅 사용 → 별도 컴포넌트로 분리) */
+/* 라이브러리 컴포넌트 */
 function Library({ bodyParts, exercises, setExercises }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBodyPart, setSelectedBodyPart] = useState('전체');
@@ -495,7 +532,7 @@ const WorkoutKPRApp = () => {
 
   const renderWorkout = () => (
     <div>
-      <ExerciseForm bodyPart="하체" exercises={exercises} onAddExercise={addWorkoutRecord} />
+      <ExerciseForm exercises={exercises} onAddExercise={addWorkoutRecord} />
       <div className="workout-sections">
         {bodyParts.map(part => (
           <div key={part} className={`workout-section ${part}`}>
@@ -634,15 +671,15 @@ const WorkoutKPRApp = () => {
           <div className="chart-title">앱 정보</div>
           <div style={{ background:'#f8f9fa', padding:15, borderRadius:8 }}>
             <h4>운동 KPR 관리 시스템</h4>
-            <p>버전: 1.0.0</p>
+            <p>버전: 1.0.1</p>
             <p>개발자: Workout KPR Team</p>
             <p>마지막 업데이트: 2025년 8월</p>
             <br />
             <h5>주요 기능</h5>
             <ul style={{ paddingLeft:20 }}>
-              <li>운동 기록 관리</li>
+              <li>운동 기록 관리 (부위 → 운동 선택)</li>
               <li>개인 기록(PR) 추적</li>
-              <li>볼륨 및 진도 분석</li>
+              <li>부위별 볼륨 분석</li>
               <li>휴식 타이머</li>
               <li>데이터 백업/복원</li>
             </ul>
@@ -671,7 +708,7 @@ const WorkoutKPRApp = () => {
         {activeTab==='dashboard' && renderDashboard()}
         {activeTab==='workout' && renderWorkout()}
         {activeTab==='progress' && renderProgress()}
-        {activeTab==='library' && <Library bodyParts={bodyParts} exercises={exercises} setExercises={setExercises} />}
+        {activeTab==='library' && <Library bodyParts={Object.keys(exercises)} exercises={exercises} setExercises={setExercises} />}
         {activeTab==='settings' && renderSettings()}
       </div>
     </div>
