@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KPR 트레이닝 관리</title>
+    <title>KPR 트레이닝 관리 </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -57,9 +57,6 @@
         <header class="text-center my-6">
             <h1 class="text-4xl font-bold text-emerald-400">KPR 트레이닝 로그</h1>
             <p class="text-gray-400 mt-2">나만의 운동 기록을 관리하고 성장하세요.</p>
-            <div class="mt-4 text-xs text-gray-500">
-                <p>사용자 ID: <span id="userIdDisplay">로딩 중...</span></p>
-            </div>
         </header>
 
         <div id="workout-container" class="space-y-8">
@@ -122,334 +119,281 @@
     <!-- 토스트 메시지 -->
     <div id="toast-message" class="toast"></div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- Firebase 설정 ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-kpr-app';
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let userId = null;
-        let workoutDocRef = null;
-        let workoutData = {};
-        
-        // --- 초기 데이터 ---
-        const initialData = {
-            '하체': [
-                { id: 'squat', name: '스쿼트', weight: 70, reps: 10 },
-                { id: 'legpress', name: '레그프레스', weight: 115, reps: 15 },
-                { id: 'legextension', name: '레그익스텐션', weight: 50, reps: 12 },
-                { id: 'legcurl', name: '레그컬', weight: 35, reps: 12 },
-                { id: 'stiffdead', name: '스티프데드', weight: 14, reps: 12 },
-            ],
-            '등': [
-                { id: 'barbellrow', name: '바벨로우', weight: 40, reps: 10 },
-                { id: 'latpulldown', name: '랫풀다운', weight: 40, reps: 12 },
-                { id: 'twoarmdumbbellrow', name: '투암덤벨로우', weight: 14, reps: 12 },
-                { id: 'onearmdumbbellrow', name: '원암덤벨로우', weight: 16, reps: 12 },
-                { id: 'cablerow', name: '케이블로우', weight: 50, reps: 12 },
-                { id: 'assistedpullup', name: '어시스트풀업', weight: 90, reps: 12 },
-            ],
-            '가슴': [
-                { id: 'benchpress', name: '벤치프레스', weight: 45, reps: 10 },
-                { id: 'dumbbellbenchpress', name: '덤벨 벤치프레스', weight: 16, reps: 8 },
-                { id: 'inclinepress', name: '인클라인덤벨프레스', weight: 14, reps: 12 },
-                { id: 'inclinesmith', name: '인클라인스미스', weight: 30, reps: 10 },
-                { id: 'cablecrossover', name: '케이블 크로스오버', weight: 0, reps: 0 },
-                { id: 'pecdeckfly', name: '펙덱 플라이', weight: 0, reps: 0 },
-            ],
-            '어깨': [
-                { id: 'overheadpress', name: '오버헤드프레스', weight: 25, reps: 11 },
-                { id: 'facepull', name: '페이스풀', weight: 25, reps: 20 },
-                { id: 'sidelateralraise', name: '사이드 레터럴 레이즈', weight: 0, reps: 0 },
-                { id: 'bentoverraise', name: '벤트 오버 레이즈', weight: 0, reps: 0 },
-                { id: 'reardeltfly', name: '리어 델트 플라이', weight: 0, reps: 0 },
-            ],
-            '팔': [
-                { id: 'cablepushdown', name: '케이블푸쉬다운', weight: 30, reps: 13 },
-                { id: 'dumbbellcurl', name: '덤벨컬', weight: 8, reps: 10 },
-            ],
-            '코어': [
-                { id: 'abdominalcircuit', name: '복부서킷', weight: 0, reps: 0 },
-            ]
-        };
-
-        // --- 인증 처리 ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                document.getElementById('userIdDisplay').textContent = userId;
-                workoutDocRef = doc(db, "artifacts", appId, "users", userId, "workoutData", "main");
-                
-                // 데이터 실시간 감지
-                onSnapshot(workoutDocRef, async (docSnap) => { // 'async' 추가
-                    if (docSnap.exists()) {
-                        workoutData = docSnap.data();
-                        renderWorkoutData();
-                    } else {
-                        // 첫 사용자일 경우 초기 데이터 설정
-                        console.log("No such document! Initializing with default data.");
-                        workoutData = initialData;
-                        await setDoc(workoutDocRef, workoutData); // 'await'는 async 함수 안에서만 사용 가능
-                        // onSnapshot이 다시 트리거되어 renderWorkoutData()를 호출합니다.
-                    }
-                }, (error) => {
-                    console.error("Error listening to document:", error);
-                    showToast("데이터를 불러오는 중 오류가 발생했습니다.", "error");
-                });
-
-            } else {
-                console.log("User is signed out");
-                 document.getElementById('userIdDisplay').textContent = '로그인되지 않음';
-            }
-        });
-
-        async function initializeAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Authentication failed:", error);
-                showToast("인증에 실패했습니다.", "error");
-            }
-        }
-
-        // --- 데이터 렌더링 ---
-        function renderWorkoutData() {
-            const container = document.getElementById('workout-container');
-            container.innerHTML = ''; // 기존 내용 초기화
-
-            const categories = Object.keys(workoutData).sort();
-
-            for (const category of categories) {
-                const exercises = workoutData[category] || [];
-
-                const categorySection = document.createElement('div');
-                categorySection.className = 'bg-gray-800 p-4 rounded-lg shadow-lg';
-                
-                const header = document.createElement('div');
-                header.className = 'flex justify-between items-center mb-4';
-                
-                const title = document.createElement('h2');
-                title.className = 'text-2xl font-bold text-emerald-400';
-                title.textContent = category;
-                
-                const buttonGroup = document.createElement('div');
-                
-                const addBtn = document.createElement('button');
-                addBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>`;
-                addBtn.className = 'text-gray-400 hover:text-white transition-colors mr-2';
-                addBtn.title = `${category}에 운동 추가`;
-                addBtn.onclick = () => openModal('add', category);
-                
-                const deleteCategoryBtn = document.createElement('button');
-                deleteCategoryBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
-                deleteCategoryBtn.className = 'text-red-500 hover:text-red-400 transition-colors';
-                deleteCategoryBtn.title = `${category} 부위 삭제`;
-                deleteCategoryBtn.onclick = () => deleteCategory(category);
-
-
-                buttonGroup.appendChild(addBtn);
-                buttonGroup.appendChild(deleteCategoryBtn);
-                header.appendChild(title);
-                header.appendChild(buttonGroup);
-                
-                categorySection.appendChild(header);
-
-                const exerciseList = document.createElement('ul');
-                exerciseList.className = 'space-y-3';
-                
-                if (exercises.length === 0) {
-                    const emptyMsg = document.createElement('li');
-                    emptyMsg.textContent = '등록된 운동이 없습니다.';
-                    emptyMsg.className = 'text-gray-500 text-center py-4';
-                    exerciseList.appendChild(emptyMsg);
-                } else {
-                    exercises.forEach(ex => {
-                        const li = document.createElement('li');
-                        li.className = 'flex items-center justify-between bg-gray-700 p-3 rounded-md';
-                        li.innerHTML = `
-                            <div class="flex-1">
-                                <span class="font-semibold">${ex.name}</span>
-                                <span class="text-gray-400 text-sm ml-2">${ex.weight}kg &times; ${ex.reps}회</span>
-                            </div>
-                            <div>
-                                <button class="edit-btn text-blue-400 hover:text-blue-300 p-1" data-category="${category}" data-id="${ex.id}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                                </button>
-                                <button class="delete-btn text-red-500 hover:text-red-400 p-1" data-category="${category}" data-id="${ex.id}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
-                                </button>
-                            </div>
-                        `;
-                        exerciseList.appendChild(li);
-                    });
-                }
-                
-                categorySection.appendChild(exerciseList);
-                container.appendChild(categorySection);
-            }
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const storageKey = 'kpr-workout-data';
+            let workoutData = {};
             
-            // 이벤트 리스너 다시 바인딩
-            bindEventListeners();
-        }
-        
-        // --- 이벤트 리스너 바인딩 ---
-        function bindEventListeners() {
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const category = btn.dataset.category;
-                    const id = btn.dataset.id;
-                    openModal('edit', category, id);
-                };
-            });
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const category = btn.dataset.category;
-                    const id = btn.dataset.id;
-                    deleteExercise(category, id);
-                };
-            });
-        }
-
-        // --- 데이터 수정/삭제/추가 함수 ---
-        async function saveDataToFirestore() {
-            if (!workoutDocRef) return;
-            try {
-                await setDoc(workoutDocRef, workoutData);
-                showToast("데이터가 성공적으로 저장되었습니다.");
-            } catch (error) {
-                console.error("Error writing document: ", error);
-                showToast("데이터 저장에 실패했습니다.", "error");
-            }
-        }
-
-        function deleteExercise(category, exerciseId) {
-            if (confirm(`'${workoutData[category].find(ex => ex.id === exerciseId).name}' 운동을 정말 삭제하시겠습니까?`)) {
-                workoutData[category] = workoutData[category].filter(ex => ex.id !== exerciseId);
-                saveDataToFirestore();
-            }
-        }
-        
-        function deleteCategory(category) {
-            if (confirm(`'${category}' 부위를 정말 삭제하시겠습니까? 해당 부위의 모든 운동 기록이 삭제됩니다.`)) {
-                delete workoutData[category];
-                saveDataToFirestore();
-            }
-        }
-
-        // --- 모달 관리 ---
-        const modal = document.getElementById('edit-modal');
-        const form = document.getElementById('edit-form');
-        const modalTitle = document.getElementById('modal-title');
-        
-        function openModal(mode, category, exerciseId = null) {
-            form.reset();
-            document.getElementById('modal-mode').value = mode;
-            document.getElementById('modal-category').value = category;
-
-            if (mode === 'edit') {
-                const exercise = workoutData[category].find(ex => ex.id === exerciseId);
-                modalTitle.textContent = '운동 기록 수정';
-                document.getElementById('modal-exercise-id').value = exerciseId;
-                document.getElementById('exercise-name').value = exercise.name;
-                document.getElementById('exercise-weight').value = exercise.weight;
-                document.getElementById('exercise-reps').value = exercise.reps;
-            } else { // 'add' mode
-                modalTitle.textContent = '새 운동 추가';
-                document.getElementById('modal-exercise-id').value = '';
-            }
-            modal.classList.add('flex');
-        }
-
-        function closeModal() {
-            modal.classList.remove('flex');
-        }
-
-        document.getElementById('cancel-btn').onclick = closeModal;
-        modal.onclick = (e) => {
-            if (e.target === modal) closeModal();
-        };
-
-        form.onsubmit = (e) => {
-            e.preventDefault();
-            const mode = document.getElementById('modal-mode').value;
-            const category = document.getElementById('modal-category').value;
-            const id = document.getElementById('modal-exercise-id').value;
-            
-            const newExercise = {
-                id: mode === 'add' ? Date.now().toString() : id,
-                name: document.getElementById('exercise-name').value,
-                weight: parseFloat(document.getElementById('exercise-weight').value) || 0,
-                reps: parseInt(document.getElementById('exercise-reps').value) || 0
+            // --- 초기 데이터 ---
+            const initialData = {
+                '하체': [
+                    { id: 'squat', name: '스쿼트', weight: 70, reps: 10 },
+                    { id: 'legpress', name: '레그프레스', weight: 115, reps: 15 },
+                    { id: 'legextension', name: '레그익스텐션', weight: 50, reps: 12 },
+                    { id: 'legcurl', name: '레그컬', weight: 35, reps: 12 },
+                    { id: 'stiffdead', name: '스티프데드', weight: 14, reps: 12 },
+                ],
+                '등': [
+                    { id: 'barbellrow', name: '바벨로우', weight: 40, reps: 10 },
+                    { id: 'latpulldown', name: '랫풀다운', weight: 40, reps: 12 },
+                    { id: 'twoarmdumbbellrow', name: '투암덤벨로우', weight: 14, reps: 12 },
+                    { id: 'onearmdumbbellrow', name: '원암덤벨로우', weight: 16, reps: 12 },
+                    { id: 'cablerow', name: '케이블로우', weight: 50, reps: 12 },
+                    { id: 'assistedpullup', name: '어시스트풀업', weight: 90, reps: 12 },
+                ],
+                '가슴': [
+                    { id: 'benchpress', name: '벤치프레스', weight: 45, reps: 10 },
+                    { id: 'dumbbellbenchpress', name: '덤벨 벤치프레스', weight: 16, reps: 8 },
+                    { id: 'inclinepress', name: '인클라인덤벨프레스', weight: 14, reps: 12 },
+                    { id: 'inclinesmith', name: '인클라인스미스', weight: 30, reps: 10 },
+                    { id: 'cablecrossover', name: '케이블 크로스오버', weight: 0, reps: 0 },
+                    { id: 'pecdeckfly', name: '펙덱 플라이', weight: 0, reps: 0 },
+                ],
+                '어깨': [
+                    { id: 'overheadpress', name: '오버헤드프레스', weight: 25, reps: 11 },
+                    { id: 'facepull', name: '페이스풀', weight: 25, reps: 20 },
+                    { id: 'sidelateralraise', name: '사이드 레터럴 레이즈', weight: 0, reps: 0 },
+                    { id: 'bentoverraise', name: '벤트 오버 레이즈', weight: 0, reps: 0 },
+                    { id: 'reardeltfly', name: '리어 델트 플라이', weight: 0, reps: 0 },
+                ],
+                '팔': [
+                    { id: 'cablepushdown', name: '케이블푸쉬다운', weight: 30, reps: 13 },
+                    { id: 'dumbbellcurl', name: '덤벨컬', weight: 8, reps: 10 },
+                ],
+                '코어': [
+                    { id: 'abdominalcircuit', name: '복부서킷', weight: 0, reps: 0 },
+                ]
             };
 
-            if (mode === 'add') {
-                if (!workoutData[category]) workoutData[category] = [];
-                workoutData[category].push(newExercise);
-            } else {
-                const index = workoutData[category].findIndex(ex => ex.id === id);
-                if (index > -1) {
-                    workoutData[category][index] = newExercise;
+            // --- 데이터 로딩 및 저장 ---
+            function loadData() {
+                const savedData = localStorage.getItem(storageKey);
+                if (savedData) {
+                    workoutData = JSON.parse(savedData);
+                } else {
+                    workoutData = initialData;
+                    saveData();
+                }
+                renderWorkoutData();
+            }
+
+            function saveData() {
+                localStorage.setItem(storageKey, JSON.stringify(workoutData));
+                showToast("데이터가 성공적으로 저장되었습니다.");
+            }
+
+            // --- 데이터 렌더링 ---
+            function renderWorkoutData() {
+                const container = document.getElementById('workout-container');
+                container.innerHTML = '';
+
+                const categories = Object.keys(workoutData).sort();
+
+                for (const category of categories) {
+                    const exercises = workoutData[category] || [];
+
+                    const categorySection = document.createElement('div');
+                    categorySection.className = 'bg-gray-800 p-4 rounded-lg shadow-lg';
+                    
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center mb-4';
+                    
+                    const title = document.createElement('h2');
+                    title.className = 'text-2xl font-bold text-emerald-400';
+                    title.textContent = category;
+                    
+                    const buttonGroup = document.createElement('div');
+                    
+                    const addBtn = document.createElement('button');
+                    addBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>`;
+                    addBtn.className = 'text-gray-400 hover:text-white transition-colors mr-2';
+                    addBtn.title = `${category}에 운동 추가`;
+                    addBtn.onclick = () => openModal('add', category);
+                    
+                    const deleteCategoryBtn = document.createElement('button');
+                    deleteCategoryBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
+                    deleteCategoryBtn.className = 'text-red-500 hover:text-red-400 transition-colors';
+                    deleteCategoryBtn.title = `${category} 부위 삭제`;
+                    deleteCategoryBtn.onclick = () => deleteCategory(category);
+
+                    buttonGroup.appendChild(addBtn);
+                    buttonGroup.appendChild(deleteCategoryBtn);
+                    header.appendChild(title);
+                    header.appendChild(buttonGroup);
+                    
+                    categorySection.appendChild(header);
+
+                    const exerciseList = document.createElement('ul');
+                    exerciseList.className = 'space-y-3';
+                    
+                    if (exercises.length === 0) {
+                        const emptyMsg = document.createElement('li');
+                        emptyMsg.textContent = '등록된 운동이 없습니다.';
+                        emptyMsg.className = 'text-gray-500 text-center py-4';
+                        exerciseList.appendChild(emptyMsg);
+                    } else {
+                        exercises.forEach(ex => {
+                            const li = document.createElement('li');
+                            li.className = 'flex items-center justify-between bg-gray-700 p-3 rounded-md';
+                            li.innerHTML = `
+                                <div class="flex-1">
+                                    <span class="font-semibold">${ex.name}</span>
+                                    <span class="text-gray-400 text-sm ml-2">${ex.weight}kg &times; ${ex.reps}회</span>
+                                </div>
+                                <div>
+                                    <button class="edit-btn text-blue-400 hover:text-blue-300 p-1" data-category="${category}" data-id="${ex.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                    <button class="delete-btn text-red-500 hover:text-red-400 p-1" data-category="${category}" data-id="${ex.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                </div>
+                            `;
+                            exerciseList.appendChild(li);
+                        });
+                    }
+                    
+                    categorySection.appendChild(exerciseList);
+                    container.appendChild(categorySection);
+                }
+                
+                bindEventListeners();
+            }
+            
+            function bindEventListeners() {
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const category = btn.dataset.category;
+                        const id = btn.dataset.id;
+                        openModal('edit', category, id);
+                    };
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const category = btn.dataset.category;
+                        const id = btn.dataset.id;
+                        deleteExercise(category, id);
+                    };
+                });
+            }
+
+            function deleteExercise(category, exerciseId) {
+                if (confirm(`'${workoutData[category].find(ex => ex.id === exerciseId).name}' 운동을 정말 삭제하시겠습니까?`)) {
+                    workoutData[category] = workoutData[category].filter(ex => ex.id !== exerciseId);
+                    saveData();
+                    renderWorkoutData();
                 }
             }
             
-            saveDataToFirestore();
-            closeModal();
-        };
-
-        // --- 새 부위 추가 모달 관리 ---
-        const categoryModal = document.getElementById('category-modal');
-        const categoryForm = document.getElementById('category-form');
-        
-        document.getElementById('add-category-btn').onclick = () => {
-            categoryForm.reset();
-            categoryModal.classList.add('flex');
-        };
-        
-        document.getElementById('cancel-category-btn').onclick = () => {
-            categoryModal.classList.remove('flex');
-        };
-        
-        categoryModal.onclick = (e) => {
-            if (e.target === categoryModal) categoryModal.classList.remove('flex');
-        };
-        
-        categoryForm.onsubmit = (e) => {
-            e.preventDefault();
-            const categoryName = document.getElementById('category-name').value.trim();
-            if (categoryName && !workoutData[categoryName]) {
-                workoutData[categoryName] = [];
-                saveDataToFirestore();
-                categoryModal.classList.remove('flex');
-            } else if (workoutData[categoryName]) {
-                showToast("이미 존재하는 부위입니다.", "error");
+            function deleteCategory(category) {
+                if (confirm(`'${category}' 부위를 정말 삭제하시겠습니까? 해당 부위의 모든 운동 기록이 삭제됩니다.`)) {
+                    delete workoutData[category];
+                    saveData();
+                    renderWorkoutData();
+                }
             }
-        };
 
+            const modal = document.getElementById('edit-modal');
+            const form = document.getElementById('edit-form');
+            const modalTitle = document.getElementById('modal-title');
+            
+            function openModal(mode, category, exerciseId = null) {
+                form.reset();
+                document.getElementById('modal-mode').value = mode;
+                document.getElementById('modal-category').value = category;
 
-        // --- 토스트 메시지 ---
-        function showToast(message, type = "success") {
-            const toast = document.getElementById('toast-message');
-            toast.textContent = message;
-            toast.className = `toast show ${type === 'error' ? 'bg-red-600' : 'bg-gray-700'}`;
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
+                if (mode === 'edit') {
+                    const exercise = workoutData[category].find(ex => ex.id === exerciseId);
+                    modalTitle.textContent = '운동 기록 수정';
+                    document.getElementById('modal-exercise-id').value = exerciseId;
+                    document.getElementById('exercise-name').value = exercise.name;
+                    document.getElementById('exercise-weight').value = exercise.weight;
+                    document.getElementById('exercise-reps').value = exercise.reps;
+                } else {
+                    modalTitle.textContent = '새 운동 추가';
+                    document.getElementById('modal-exercise-id').value = '';
+                }
+                modal.classList.add('flex');
+            }
 
-        // --- 앱 초기화 ---
-        initializeAuth();
+            function closeModal() {
+                modal.classList.remove('flex');
+            }
+
+            document.getElementById('cancel-btn').onclick = closeModal;
+            modal.onclick = (e) => {
+                if (e.target === modal) closeModal();
+            };
+
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                const mode = document.getElementById('modal-mode').value;
+                const category = document.getElementById('modal-category').value;
+                const id = document.getElementById('modal-exercise-id').value;
+                
+                const newExercise = {
+                    id: mode === 'add' ? Date.now().toString() : id,
+                    name: document.getElementById('exercise-name').value,
+                    weight: parseFloat(document.getElementById('exercise-weight').value) || 0,
+                    reps: parseInt(document.getElementById('exercise-reps').value) || 0
+                };
+
+                if (mode === 'add') {
+                    if (!workoutData[category]) workoutData[category] = [];
+                    workoutData[category].push(newExercise);
+                } else {
+                    const index = workoutData[category].findIndex(ex => ex.id === id);
+                    if (index > -1) {
+                        workoutData[category][index] = newExercise;
+                    }
+                }
+                
+                saveData();
+                renderWorkoutData();
+                closeModal();
+            };
+
+            const categoryModal = document.getElementById('category-modal');
+            const categoryForm = document.getElementById('category-form');
+            
+            document.getElementById('add-category-btn').onclick = () => {
+                categoryForm.reset();
+                categoryModal.classList.add('flex');
+            };
+            
+            document.getElementById('cancel-category-btn').onclick = () => {
+                categoryModal.classList.remove('flex');
+            };
+            
+            categoryModal.onclick = (e) => {
+                if (e.target === categoryModal) categoryModal.classList.remove('flex');
+            };
+            
+            categoryForm.onsubmit = (e) => {
+                e.preventDefault();
+                const categoryName = document.getElementById('category-name').value.trim();
+                if (categoryName && !workoutData[categoryName]) {
+                    workoutData[categoryName] = [];
+                    saveData();
+                    renderWorkoutData();
+                    categoryModal.classList.remove('flex');
+                } else if (workoutData[categoryName]) {
+                    showToast("이미 존재하는 부위입니다.", "error");
+                }
+            };
+
+            function showToast(message, type = "success") {
+                const toast = document.getElementById('toast-message');
+                toast.textContent = message;
+                toast.className = `toast show ${type === 'error' ? 'bg-red-600' : 'bg-gray-700'}`;
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+
+            // --- 앱 초기화 ---
+            loadData();
+        });
     </script>
 
 </body>
