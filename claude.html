@@ -1,723 +1,598 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>운동 KPR 관리 시스템</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; color:#333; }
-        .container { max-width:1200px; margin:0 auto; padding:20px; }
-        .header { text-align:center; margin-bottom:30px; color:#fff; }
-        .header h1 { font-size:2.5rem; margin-bottom:10px; text-shadow:0 2px 4px rgba(0,0,0,0.3); }
-        .header p { font-size:1.1rem; opacity:.9; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>운동 KPR 관리 시스템</title>
+  <!-- React 18 UMD + Babel (개발용) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; color:#333; }
+    .container { max-width:1200px; margin:0 auto; padding:20px; }
+    .header { text-align:center; margin-bottom:30px; color:#fff; }
+    .header h1 { font-size:2.5rem; margin-bottom:10px; text-shadow:0 2px 4px rgba(0,0,0,0.3); }
+    .header p { font-size:1.1rem; opacity:.9; }
 
-        .nav-tabs { display:flex; background:#fff; border-radius:10px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); overflow:hidden; flex-wrap:wrap; }
-        .nav-tab { flex:1; padding:15px 10px; text-align:center; cursor:pointer; background:#fff; border:none; font-size:.9rem; font-weight:600; transition:all .3s ease; min-width:100px; }
-        .nav-tab:hover { background:#f8f9fa; }
-        .nav-tab.active { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
+    .nav-tabs { display:flex; background:#fff; border-radius:10px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); overflow:hidden; flex-wrap:wrap; }
+    .nav-tab { flex:1; padding:15px 10px; text-align:center; cursor:pointer; background:#fff; border:none; font-size:.9rem; font-weight:600; transition:all .3s ease; min-width:100px; }
+    .nav-tab:hover { background:#f8f9fa; }
+    .nav-tab.active { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
 
-        .content-area { background:#fff; border-radius:15px; padding:25px; box-shadow:0 8px 25px rgba(0,0,0,0.15); }
+    .content-area { background:#fff; border-radius:15px; padding:25px; box-shadow:0 8px 25px rgba(0,0,0,0.15); }
 
-        .workout-sections { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-bottom:30px; }
-        .workout-section { background:#f8f9fa; border-radius:12px; padding:20px; border-left:5px solid; }
-        .workout-section.하체 { border-left-color:#e74c3c; }
-        .workout-section.등 { border-left-color:#3498db; }
-        .workout-section.가슴 { border-left-color:#2ecc71; }
-        .workout-section.어깨 { border-left-color:#f39c12; }
-        .workout-section.팔 { border-left-color:#9b59b6; }
-        .workout-section.코어 { border-left-color:#1abc9c; }
+    .workout-sections { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-bottom:30px; }
+    .workout-section { background:#f8f9fa; border-radius:12px; padding:20px; border-left:5px solid; }
+    .workout-section.하체 { border-left-color:#e74c3c; }
+    .workout-section.등 { border-left-color:#3498db; }
+    .workout-section.가슴 { border-left-color:#2ecc71; }
+    .workout-section.어깨 { border-left-color:#f39c12; }
+    .workout-section.팔 { border-left-color:#9b59b6; }
+    .workout-section.코어 { border-left-color:#1abc9c; }
 
-        .section-title { font-size:1.3rem; font-weight:bold; margin-bottom:15px; display:flex; align-items:center; gap:8px; }
+    .section-title { font-size:1.3rem; font-weight:bold; margin-bottom:15px; display:flex; align-items:center; gap:8px; }
 
-        .exercise-item { background:#fff; padding:12px 15px; margin-bottom:10px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); transition:transform .2s ease; }
-        .exercise-item:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-        .exercise-name { font-weight:600; margin-bottom:5px; color:#2c3e50; }
-        .exercise-stats { display:flex; gap:15px; font-size:.9rem; color:#7f8c8d; flex-wrap:wrap; }
-        .stat { display:flex; align-items:center; gap:4px; }
+    /* 라이브러리용 스타일 */
+    .exercise-item { background:#fff; padding:12px 15px; margin-bottom:10px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); transition:transform .2s ease; }
+    .exercise-item:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+    .exercise-name { font-weight:600; margin-bottom:5px; color:#2c3e50; }
+    .exercise-stats { display:flex; gap:15px; font-size:.9rem; color:#7f8c8d; flex-wrap:wrap; }
+    .stat { display:flex; align-items:center; gap:4px; }
+    
+    /* [신규] 운동기록 탭의 심플한 운동 목록 스타일 */
+    .simple-exercise-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; margin-bottom: 10px; border-radius: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e9ecef; }
+    .exercise-name-simple { font-weight: 600; color: #2c3e50; }
+    .last-record-info { font-size: 0.9rem; color: #6c757d; font-weight: 500; }
 
-        .dashboard-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-bottom:30px; }
-        .stat-card { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; padding:20px; border-radius:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
-        .stat-number { font-size:2rem; font-weight:bold; margin-bottom:5px; }
-        .stat-label { font-size:.9rem; opacity:.9; }
+    .dashboard-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; margin-bottom:30px; }
+    .stat-card { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; padding:20px; border-radius:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+    .stat-number { font-size:2rem; font-weight:bold; margin-bottom:5px; }
+    .stat-label { font-size:.9rem; opacity:.9; }
 
-        .chart-container { background:#fff; padding:20px; border-radius:12px; margin:20px 0; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
-        .chart-title { font-size:1.2rem; font-weight:600; margin-bottom:20px; text-align:center; color:#2c3e50; }
+    .chart-container { background:#fff; padding:20px; border-radius:12px; margin:20px 0; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+    .chart-title { font-size:1.2rem; font-weight:600; margin-bottom:20px; text-align:center; color:#2c3e50; }
 
-        .workout-form { background:#f8f9fa; padding:20px; border-radius:12px; margin-bottom:20px; }
-        .form-group { margin-bottom:15px; }
-        .form-label { display:block; margin-bottom:5px; font-weight:600; color:#2c3e50; }
-        .form-input, .form-select { width:100%; padding:10px 12px; border:2px solid #e9ecef; border-radius:8px; font-size:1rem; transition:border-color .3s ease; }
-        .form-input:focus, .form-select:focus { outline:none; border-color:#667eea; }
-        .form-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+    .workout-form { background:#f8f9fa; padding:20px; border-radius:12px; margin-bottom:20px; }
+    .form-group { margin-bottom:15px; }
+    .form-label { display:block; margin-bottom:5px; font-weight:600; color:#2c3e50; }
+    .form-input, .form-select { width:100%; padding:10px 12px; border:2px solid #e9ecef; border-radius:8px; font-size:1rem; transition:border-color .3s ease; }
+    .form-input:focus, .form-select:focus { outline:none; border-color:#667eea; }
+    .form-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
 
-        .btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:all .3s ease; }
-        .btn-primary { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
-        .btn-secondary { background:#6c757d; color:#fff; }
-        .btn-success { background:#28a745; color:#fff; }
-        .btn-danger { background:#dc3545; color:#fff; }
-        .btn:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+    .btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:all .3s ease; }
+    .btn-primary { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    .btn-success { background:#28a745; color:#fff; }
+    .btn-danger { background:#dc3545; color:#fff; }
+    .btn:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2); }
 
-        .timer-display { font-size:3rem; font-weight:bold; text-align:center; margin:20px 0; color:#2c3e50; }
-        .timer-controls { display:flex; gap:10px; justify-content:center; margin-bottom:20px; }
+    .timer-display { font-size:3rem; font-weight:bold; text-align:center; margin:20px 0; color:#2c3e50; }
+    .timer-controls { display:flex; gap:10px; justify-content:center; margin-bottom:20px; }
 
-        .volume-display { background:#e8f4fd; border:1px solid #bee5eb; border-radius:8px; padding:10px; margin:10px 0; text-align:center; font-weight:600; color:#0c5460; }
+    .recent-workout { background:#f8f9fa; border-radius:8px; padding:15px; margin-bottom:10px; border-left:4px solid #667eea; }
+    .workout-date { font-size:.9rem; color:#6c757d; margin-bottom:5px; }
+    .workout-summary { display:flex; justify-content:space-between; align-items:center; }
 
-        .recent-workout { background:#f8f9fa; border-radius:8px; padding:15px; margin-bottom:10px; border-left:4px solid #667eea; }
-        .workout-date { font-size:.9rem; color:#6c757d; margin-bottom:5px; }
-        .workout-summary { display:flex; justify-content:space-between; align-items:center; }
+    .progress-item { background:#fff; padding:15px; border-radius:8px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+    .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .progress-bar { width:100%; height:8px; background:#e9ecef; border-radius:4px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); transition:width .3s ease; }
 
-        .progress-item { background:#fff; padding:15px; border-radius:8px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-        .progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-        .progress-bar { width:100%; height:8px; background:#e9ecef; border-radius:4px; overflow:hidden; }
-        .progress-fill { height:100%; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); transition:width .3s ease; }
+    /* 세트 입력 관련 스타일 */
+    .sets-container { background:#fff; border-radius:12px; padding:20px; margin:20px 0; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+    .set-row { display:grid; grid-template-columns:auto 1fr 1fr auto; gap:15px; align-items:center; padding:10px; margin-bottom:10px; background:#f8f9fa; border-radius:8px; }
+    .set-number { font-weight:600; color:#667eea; min-width:60px; }
+    .set-input { padding:8px 12px; border:2px solid #e9ecef; border-radius:6px; font-size:1rem; }
+    .set-input:focus { outline:none; border-color:#667eea; }
+    .total-volume { text-align:center; padding:15px; background:#e8f4fd; border-radius:8px; margin-top:10px; font-weight:600; color:#0c5460; }
+    .exercise-selection { background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+    
+    /* [신규] PR 표시 스타일 */
+    .pr-display { text-align: center; padding: 10px; margin-bottom: 15px; background: #fef9c3; color: #713f12; border-radius: 8px; font-weight: 600; border: 1px solid #fde047; font-size: 0.9rem; }
 
-        .add-exercise-btn { width:100%; padding:12px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:all .3s ease; margin-top:10px; }
-        .add-exercise-btn:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(102,126,234,.4); }
-
-        @media (max-width:768px) {
-            .container { padding:10px; }
-            .nav-tabs { flex-wrap:wrap; }
-            .nav-tab { flex:none; min-width:80px; font-size:.8rem; padding:12px 8px; }
-            .workout-sections { grid-template-columns:1fr; }
-            .dashboard-stats { grid-template-columns:repeat(2,1fr); }
-            .form-row { grid-template-columns:1fr; }
-            .header h1 { font-size:2rem; }
-        }
-    </style>
+    @media (max-width:768px) {
+      .container { padding:10px; }
+      .nav-tabs { flex-wrap:wrap; }
+      .nav-tab { flex:none; min-width:80px; font-size:.8rem; padding:12px 8px; }
+      .workout-sections { grid-template-columns:1fr; }
+      .dashboard-stats { grid-template-columns:repeat(2,1fr); }
+      .form-row { grid-template-columns:1fr; }
+      .header h1 { font-size:2rem; }
+      .set-row { grid-template-columns:auto 1fr 1fr; gap:10px; }
+    }
+  </style>
 </head>
 <body>
-<div id="root"></div>
+  <div id="root"></div>
 
-<script type="text/babel" data-presets="env,react">
-const { useState, useEffect, useRef } = React;
+  <script type="text/babel" data-presets="react,env">
+    const { useState, useEffect, useRef } = React;
 
-/* 초기 운동 데이터 */
-const initialExercises = {
-  '하체': [
-    { name: '스쿼트', weight: 70, reps: 10, sets: 3 },
-    { name: '레그프레스', weight: 115, reps: 15, sets: 3 },
-    { name: '레그익스텐션', weight: 50, reps: 12, sets: 3 },
-    { name: '레그컬', weight: 35, reps: 12, sets: 3 },
-    { name: '스티프데드', weight: 14, reps: 12, sets: 3 }
-  ],
-  '등': [
-    { name: '바벨로우', weight: 40, reps: 10, sets: 3 },
-    { name: '랫풀다운', weight: 40, reps: 12, sets: 3 },
-    { name: '투암덤벨로우', weight: 14, reps: 12, sets: 3 },
-    { name: '원암덤벨로우', weight: 16, reps: 12, sets: 3 },
-    { name: '케이블로우', weight: 50, reps: 12, sets: 3 },
-    { name: '어시스트풀업', weight: 90, reps: 12, sets: 3 }
-  ],
-  '가슴': [
-    { name: '벤치프레스', weight: 45, reps: 10, sets: 3 },
-    { name: '덤벨 벤치프레스', weight: 16, reps: 8, sets: 3 },
-    { name: '인클라인덤벨프레스', weight: 14, reps: 12, sets: 3 },
-    { name: '인클라인스미스', weight: 30, reps: 10, sets: 3 },
-    { name: '케이블 크로스오버', weight: 20, reps: 12, sets: 3 },
-    { name: '펙덱 플라이', weight: 25, reps: 12, sets: 3 }
-  ],
-  '어깨': [
-    { name: '오버헤드프레스', weight: 25, reps: 11, sets: 3 },
-    { name: '페이스풀', weight: 25, reps: 20, sets: 3 },
-    { name: '사이드 레터럴 레이즈', weight: 5, reps: 12, sets: 3 },
-    { name: '벤트 오버 레이즈', weight: 5, reps: 12, sets: 3 },
-    { name: '리어 델트 플라이', weight: 15, reps: 12, sets: 3 }
-  ],
-  '팔': [
-    { name: '케이블푸쉬다운', weight: 30, reps: 13, sets: 3 },
-    { name: '덤벨컬', weight: 8, reps: 10, sets: 3 }
-  ],
-  '코어': [
-    { name: '복부서킷', weight: 0, reps: 30, sets: 3 }
-  ]
-};
-
-/* 로컬 스토리지 관리 훅 */
-const useLocalStorage = (key, initialValue) => {
-  const [storedValue, setStoredValue] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error('Error reading from localStorage:', error);
-      return initialValue;
-    }
-  });
-
-  const setValue = (value) => {
-    try {
-      const valueToStore = typeof value === 'function' ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
-    } catch (error) {
-      console.error('Error writing to localStorage:', error);
-    }
-  };
-
-  return [storedValue, setValue];
-};
-
-/* 타이머 컴포넌트 */
-const Timer = ({ isActive, time, onStart, onStop, onReset }) => {
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-  };
-
-  return (
-    <div className="chart-container">
-      <div className="chart-title">휴식 타이머</div>
-      <div className="timer-display">{formatTime(time)}</div>
-      <div className="timer-controls">
-        <button className={`btn ${isActive ? 'btn-danger' : 'btn-success'}`} onClick={isActive ? onStop : onStart}>
-          {isActive ? '정지' : '시작'}
-        </button>
-        <button className="btn btn-secondary" onClick={onReset}>리셋</button>
-      </div>
-    </div>
-  );
-};
-
-/* 운동 기록 폼 컴포넌트 - 부위 선택 후 세부 운동 선택 */
-const ExerciseForm = ({ exercises, onAddExercise }) => {
-  const bodyParts = Object.keys(exercises);
-  const [selectedBodyPart, setSelectedBodyPart] = useState(bodyParts[0] || '하체');
-  const [selectedExercise, setSelectedExercise] = useState('');
-  const [weight, setWeight] = useState('');
-  const [reps, setReps] = useState('');
-  const [sets, setSets] = useState('3');
-  const [notes, setNotes] = useState('');
-
-  /* 부위가 바뀌면 운동/입력값 초기화 */
-  useEffect(() => {
-    setSelectedExercise('');
-    setWeight('');
-    setReps('');
-    setSets('3');
-  }, [selectedBodyPart]);
-
-  /* 운동 선택 시 기본값 프리필 */
-  const handleExerciseChange = (e) => {
-    const name = e.target.value;
-    setSelectedExercise(name);
-    const exercise = exercises[selectedBodyPart]?.find(ex => ex.name === name);
-    if (exercise) {
-      setWeight(exercise.weight?.toString() ?? '');
-      setReps(exercise.reps?.toString() ?? '');
-      setSets(exercise.sets?.toString() ?? '3');
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!selectedBodyPart) {
-      alert('운동 부위를 선택하세요.');
-      return;
-    }
-    if (!selectedExercise || !weight || !reps) {
-      alert('운동, 무게, 반복수를 모두 입력해주세요.');
-      return;
-    }
-    const exerciseData = {
-      id: Date.now(),
-      name: selectedExercise,
-      weight: parseFloat(weight),
-      reps: parseInt(reps),
-      sets: parseInt(sets),
-      notes,
-      date: new Date().toISOString(),
-      bodyPart: selectedBodyPart
-    };
-    onAddExercise(exerciseData);
-    setSelectedExercise('');
-    setWeight('');
-    setReps('');
-    setSets('3');
-    setNotes('');
-  };
-
-  const calculateVolume = () => {
-    const w = parseFloat(weight) || 0;
-    const r = parseInt(reps) || 0;
-    const s = parseInt(sets) || 0;
-    return w * r * s;
-  };
-
-  const currentExerciseList = exercises[selectedBodyPart] || [];
-
-  return (
-    <form className="workout-form" onSubmit={handleSubmit}>
-      <div className="form-row">
-        <div className="form-group">
-          <label className="form-label">부위 선택</label>
-          <select
-            className="form-select"
-            value={selectedBodyPart}
-            onChange={(e) => setSelectedBodyPart(e.target.value)}
-          >
-            {bodyParts.map((part) => (
-              <option key={part} value={part}>{part}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">운동 선택</label>
-          <select
-            className="form-select"
-            value={selectedExercise}
-            onChange={handleExerciseChange}
-          >
-            <option value="">운동을 선택하세요</option>
-            {currentExerciseList.map((exercise, index) => (
-              <option key={index} value={exercise.name}>{exercise.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="form-row">
-        <div className="form-group">
-          <label className="form-label">무게 (kg)</label>
-          <input type="number" className="form-input" value={weight} onChange={(e)=>setWeight(e.target.value)} step="0.5" min="0" />
-        </div>
-        <div className="form-group">
-          <label className="form-label">반복수</label>
-          <input type="number" className="form-input" value={reps} onChange={(e)=>setReps(e.target.value)} min="1" />
-        </div>
-        <div className="form-group">
-          <label className="form-label">세트수</label>
-          <input type="number" className="form-input" value={sets} onChange={(e)=>setSets(e.target.value)} min="1" />
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label className="form-label">메모</label>
-        <input type="text" className="form-input" value={notes} onChange={(e)=>setNotes(e.target.value)} placeholder="운동에 대한 메모를 입력하세요" />
-      </div>
-
-      {weight && reps && sets && (
-        <div className="volume-display">예상 볼륨: {calculateVolume().toLocaleString()} kg</div>
-      )}
-
-      <button type="submit" className="btn btn-primary" style={{ width:'100%' }}>운동 기록 추가</button>
-    </form>
-  );
-};
-
-/* 라이브러리 컴포넌트 */
-function Library({ bodyParts, exercises, setExercises }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBodyPart, setSelectedBodyPart] = useState('전체');
-  const [newExercise, setNewExercise] = useState({
-    name: '', bodyPart: '하체', weight: '', reps: '', sets: '3'
-  });
-  const [isAddingExercise, setIsAddingExercise] = useState(false);
-
-  const addNewExercise = () => {
-    if (!newExercise.name) return;
-    const exerciseData = {
-      name: newExercise.name,
-      weight: parseFloat(newExercise.weight) || 0,
-      reps: parseInt(newExercise.reps) || 12,
-      sets: parseInt(newExercise.sets) || 3
-    };
-    setExercises(prev => ({
-      ...prev,
-      [newExercise.bodyPart]: [...(prev[newExercise.bodyPart] || []), exerciseData]
-    }));
-    setNewExercise({ name:'', bodyPart:'하체', weight:'', reps:'', sets:'3' });
-    setIsAddingExercise(false);
-  };
-
-  const deleteExercise = (bodyPart, exerciseIndex) => {
-    setExercises(prev => ({
-      ...prev,
-      [bodyPart]: prev[bodyPart].filter((_, idx) => idx !== exerciseIndex)
-    }));
-  };
-
-  const filteredExercises = () => {
-    const result = [];
-    Object.entries(exercises).forEach(([part, list]) => {
-      if (selectedBodyPart === '전체' || selectedBodyPart === part) {
-        list.forEach((ex, idx) => {
-          if (ex.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-            result.push({ ...ex, bodyPart: part, index: idx });
-          }
-        });
-      }
-    });
-    return result;
-  };
-
-  return (
-    <div>
-      <div className="workout-form">
-        <div className="form-group">
-          <label className="form-label">검색</label>
-          <input type="text" className="form-input" placeholder="운동 이름으로 검색..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">부위 필터</label>
-          <select className="form-select" value={selectedBodyPart} onChange={(e)=>setSelectedBodyPart(e.target.value)}>
-            <option value="전체">전체</option>
-            {bodyParts.map(part => <option key={part} value={part}>{part}</option>)}
-          </select>
-        </div>
-
-        <button className="btn btn-primary" onClick={()=>setIsAddingExercise(!isAddingExercise)} style={{ width:'100%' }}>
-          {isAddingExercise ? '취소' : '새 운동 추가'}
-        </button>
-      </div>
-
-      {isAddingExercise && (
-        <div className="workout-form">
-          <div className="form-group">
-            <label className="form-label">운동 이름</label>
-            <input type="text" className="form-input" value={newExercise.name} onChange={(e)=>setNewExercise(prev=>({...prev, name:e.target.value}))} placeholder="운동 이름을 입력하세요" />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">부위</label>
-              <select className="form-select" value={newExercise.bodyPart} onChange={(e)=>setNewExercise(prev=>({...prev, bodyPart:e.target.value}))}>
-                {bodyParts.map(part => <option key={part} value={part}>{part}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">기본 무게</label>
-              <input type="number" className="form-input" value={newExercise.weight} onChange={(e)=>setNewExercise(prev=>({...prev, weight:e.target.value}))} step="0.5" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">기본 반복수</label>
-              <input type="number" className="form-input" value={newExercise.reps} onChange={(e)=>setNewExercise(prev=>({...prev, reps:e.target.value}))} />
-            </div>
-          </div>
-
-          <button className="btn btn-success" onClick={addNewExercise} style={{ width:'100%' }}>운동 추가하기</button>
-        </div>
-      )}
-
-      <div className="chart-container">
-        <div className="chart-title">운동 라이브러리 ({filteredExercises().length}개)</div>
-        <div style={{ maxHeight:'400px', overflowY:'auto' }}>
-          {filteredExercises().map((exercise, idx) => (
-            <div key={idx} className="exercise-item">
-              <div className="exercise-name">
-                {exercise.name}
-                <span style={{ background:'#e9ecef', color:'#6c757d', padding:'2px 8px', borderRadius:'12px', fontSize:'.8rem', marginLeft:'8px' }}>
-                  {exercise.bodyPart}
-                </span>
-              </div>
-              <div className="exercise-stats">
-                <div className="stat">⚖️ {exercise.weight}kg</div>
-                <div className="stat">🔢 {exercise.reps}회</div>
-                <div className="stat">📊 {exercise.sets}세트</div>
-                <button className="btn btn-danger" style={{ padding:'4px 8px', fontSize:'.8rem' }} onClick={()=>deleteExercise(exercise.bodyPart, exercise.index)}>삭제</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* 메인 앱 */
-const WorkoutKPRApp = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [exercises, setExercises] = useLocalStorage('exercises', initialExercises);
-  const [workoutHistory, setWorkoutHistory] = useLocalStorage('workoutHistory', []);
-  const [personalRecords, setPersonalRecords] = useLocalStorage('personalRecords', {});
-  const [timerTime, setTimerTime] = useState(0);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const timerRef = useRef(null);
-
-  const bodyParts = ['하체','등','가슴','어깨','팔','코어'];
-
-  /* 타이머 */
-  useEffect(()=>{
-    if (isTimerActive) {
-      timerRef.current = setInterval(()=>setTimerTime(prev=>prev+1), 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    return ()=> { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [isTimerActive]);
-
-  /* 1RM 계산 (Epley) */
-  const calculateOneRM = (weight, reps) => {
-    if (reps === 1) return weight;
-    return Math.round(weight * (1 + reps / 30));
-  };
-
-  /* 기록 추가 */
-  const addWorkoutRecord = (exerciseData) => {
-    setWorkoutHistory(prev => [exerciseData, ...prev]);
-    const exerciseName = exerciseData.name;
-    const currentPR = personalRecords[exerciseName];
-    const newOneRM = calculateOneRM(exerciseData.weight, exerciseData.reps);
-    if (!currentPR || newOneRM > currentPR.oneRM) {
-      setPersonalRecords(prev => ({
-        ...prev,
-        [exerciseName]: {
-          weight: exerciseData.weight,
-          reps: exerciseData.reps,
-          oneRM: newOneRM,
-          date: exerciseData.date
-        }
-      }));
-    }
-  };
-
-  /* 통계 */
-  const calculateStats = () => {
-    const today = new Date().toDateString();
-    const thisWeek = new Date(Date.now() - 7*24*60*60*1000);
-    const thisMonth = new Date(Date.now() - 30*24*60*60*1000);
-
-    const todayWorkouts = workoutHistory.filter(w => new Date(w.date).toDateString() === today).length;
-    const weekWorkouts = workoutHistory.filter(w => new Date(w.date) > thisWeek).length;
-    const monthVolume = workoutHistory.filter(w => new Date(w.date) > thisMonth)
-      .reduce((t,w)=>t + w.weight*w.reps*w.sets, 0);
-    const totalPRs = Object.keys(personalRecords).length;
-
-    return { todayWorkouts, weekWorkouts, monthVolume, totalPRs };
-  };
-
-  const stats = calculateStats();
-
-  /* 타이머 컨트롤 */
-  const startTimer = () => setIsTimerActive(true);
-  const stopTimer = () => setIsTimerActive(false);
-  const resetTimer = () => { setIsTimerActive(false); setTimerTime(0); };
-
-  /* 섹션 렌더러 (훅 사용 없음) */
-  const renderDashboard = () => (
-    <div>
-      <div className="dashboard-stats">
-        <div className="stat-card"><div className="stat-number">{stats.todayWorkouts}</div><div className="stat-label">오늘 운동</div></div>
-        <div className="stat-card"><div className="stat-number">{stats.weekWorkouts}</div><div className="stat-label">이번 주 운동</div></div>
-        <div className="stat-card"><div className="stat-number">{(stats.monthVolume/1000).toFixed(1)}K</div><div className="stat-label">이번 달 볼륨</div></div>
-        <div className="stat-card"><div className="stat-number">{stats.totalPRs}</div><div className="stat-label">개인 기록</div></div>
-      </div>
-
-      <Timer isActive={isTimerActive} time={timerTime} onStart={startTimer} onStop={stopTimer} onReset={resetTimer} />
-
-      <div className="chart-container">
-        <div className="chart-title">최근 운동 기록</div>
-        {workoutHistory.length === 0 ? (
-          <div style={{ textAlign:'center', color:'#6c757d', padding:'20px' }}>아직 운동 기록이 없습니다. 운동을 시작해보세요!</div>
-        ) : (
-          workoutHistory.slice(0,5).map((workout, idx)=>(
-            <div key={idx} className="recent-workout">
-              <div className="workout-date">{new Date(workout.date).toLocaleDateString('ko-KR')}</div>
-              <div className="workout-summary">
-                <span><strong>{workout.name}</strong></span>
-                <span>{workout.weight}kg × {workout.reps} × {workout.sets}세트</span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
-  const renderWorkout = () => (
-    <div>
-      <ExerciseForm exercises={exercises} onAddExercise={addWorkoutRecord} />
-      <div className="workout-sections">
-        {bodyParts.map(part => (
-          <div key={part} className={`workout-section ${part}`}>
-            <div className="section-title">📍 {part}</div>
-            {exercises[part]?.map((exercise, idx)=>(
-              <div key={idx} className="exercise-item">
-                <div className="exercise-name">{exercise.name}</div>
-                <div className="exercise-stats">
-                  <div className="stat">⚖️ {exercise.weight}kg</div>
-                  <div className="stat">🔢 {exercise.reps}회</div>
-                  <div className="stat">📊 {exercise.sets}세트</div>
-                  <div className="stat">💪 {(exercise.weight*exercise.reps*exercise.sets).toLocaleString()}kg</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderProgress = () => (
-    <div>
-      <div className="chart-container">
-        <div className="chart-title">개인 기록 (PR)</div>
-        {Object.keys(personalRecords).length === 0 ? (
-          <div style={{ textAlign:'center', color:'#6c757d', padding:'20px' }}>아직 개인 기록이 없습니다. 운동을 시작해보세요!</div>
-        ) : (
-          Object.entries(personalRecords).map(([name, record])=>(
-            <div key={name} className="progress-item">
-              <div className="progress-header">
-                <span><strong>{name}</strong></span>
-                <span>{record.weight}kg × {record.reps}회</span>
-              </div>
-              <div style={{ fontSize:'.9rem', color:'#6c757d' }}>
-                1RM: {record.oneRM}kg | {new Date(record.date).toLocaleDateString('ko-KR')}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="chart-container">
-        <div className="chart-title">부위별 볼륨 분석</div>
-        {bodyParts.map(part => {
-          const vol = workoutHistory.filter(w=>w.bodyPart===part).reduce((t,w)=>t+w.weight*w.reps*w.sets,0);
-          const maxVol = Math.max(...bodyParts.map(bp =>
-            workoutHistory.filter(w=>w.bodyPart===bp).reduce((t,w)=>t+w.weight*w.reps*w.sets,0)
-          ), 0);
-          const pct = maxVol>0 ? (vol/maxVol)*100 : 0;
-          return (
-            <div key={part} className="progress-item">
-              <div className="progress-header"><span>{part}</span><span>{vol.toLocaleString()}kg</span></div>
-              <div className="progress-bar"><div className="progress-fill" style={{ width:`${pct}%` }}></div></div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="chart-container">
-        <div className="chart-title">최근 운동 트렌드</div>
-        {workoutHistory.length === 0 ? (
-          <div style={{ textAlign:'center', color:'#6c757d', padding:'20px' }}>운동 기록이 없습니다.</div>
-        ) : (
-          workoutHistory.slice(0,10).map((w, idx)=>(
-            <div key={idx} className="recent-workout">
-              <div className="workout-date">
-                {new Date(w.date).toLocaleDateString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}
-              </div>
-              <div className="workout-summary">
-                <span><strong>{w.name}</strong><span style={{ color:'#6c757d', marginLeft:8 }}>({w.bodyPart})</span></span>
-                <span>{w.weight}kg × {w.reps} × {w.sets}세트
-                  <span style={{ color:'#667eea', marginLeft:8 }}>= {(w.weight*w.reps*w.sets).toLocaleString()}kg</span>
-                </span>
-              </div>
-              {w.notes && <div style={{ fontSize:'.9rem', color:'#6c757d', marginTop:5 }}>📝 {w.notes}</div>}
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
-  const renderSettings = () => {
-    const exportData = () => {
-      const data = { exercises, workoutHistory, personalRecords, exportDate: new Date().toISOString() };
-      const blob = new Blob([JSON.stringify(data,null,2)], { type:'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `workout-kpr-backup-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+    /* 초기 운동 데이터 */
+    const initialExercises = {
+      '하체': [
+        { name: '스쿼트', weight: 70, reps: 10, sets: 3 },
+        { name: '레그프레스', weight: 115, reps: 15, sets: 3 },
+        { name: '레그익스텐션', weight: 50, reps: 12, sets: 3 },
+        { name: '레그컬', weight: 35, reps: 12, sets: 3 },
+        { name: '스티프데드', weight: 14, reps: 12, sets: 3 }
+      ],
+      '등': [
+        { name: '바벨로우', weight: 40, reps: 10, sets: 3 },
+        { name: '랫풀다운', weight: 40, reps: 12, sets: 3 },
+        { name: '투암덤벨로우', weight: 14, reps: 12, sets: 3 },
+        { name: '원암덤벨로우', weight: 16, reps: 12, sets: 3 },
+        { name: '케이블로우', weight: 50, reps: 12, sets: 3 },
+        { name: '어시스트풀업', weight: 90, reps: 12, sets: 3 }
+      ],
+      '가슴': [
+        { name: '벤치프레스', weight: 45, reps: 10, sets: 3 },
+        { name: '덤벨 벤치프레스', weight: 16, reps: 8, sets: 3 },
+        { name: '인클라인덤벨프레스', weight: 14, reps: 12, sets: 3 },
+        { name: '인클라인스미스', weight: 30, reps: 10, sets: 3 },
+        { name: '케이블 크로스오버', weight: 20, reps: 12, sets: 3 },
+        { name: '펙덱 플라이', weight: 25, reps: 12, sets: 3 }
+      ],
+      '어깨': [
+        { name: '오버헤드프레스', weight: 25, reps: 11, sets: 3 },
+        { name: '페이스풀', weight: 25, reps: 20, sets: 3 },
+        { name: '사이드 레터럴 레이즈', weight: 5, reps: 12, sets: 3 },
+        { name: '벤트 오버 레이즈', weight: 5, reps: 12, sets: 3 },
+        { name: '리어 델트 플라이', weight: 15, reps: 12, sets: 3 }
+      ],
+      '팔': [
+        { name: '케이블푸쉬다운', weight: 30, reps: 13, sets: 3 },
+        { name: '덤벨컬', weight: 8, reps: 10, sets: 3 }
+      ],
+      '코어': [
+        { name: '복부서킷', weight: 0, reps: 30, sets: 3 }
+      ]
     };
 
-    const importData = (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
+    /* 로컬 스토리지 관리 훅 */
+    const useLocalStorage = (key, initialValue) => {
+      const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+      const [storedValue, setStoredValue] = useState(() => {
+        if (!isBrowser) return initialValue;
         try {
-          const data = JSON.parse(e.target.result);
-          if (data.exercises) setExercises(data.exercises);
-          if (data.workoutHistory) setWorkoutHistory(data.workoutHistory);
-          if (data.personalRecords) setPersonalRecords(data.personalRecords);
-          alert('데이터를 성공적으로 가져왔습니다!');
-        } catch (err) {
-          alert('파일을 읽는 중 오류가 발생했습니다.');
+          const item = window.localStorage.getItem(key);
+          return item ? JSON.parse(item) : initialValue;
+        } catch (error) {
+          console.error('Error reading from localStorage:', error);
+          return initialValue;
+        }
+      });
+
+      const setValue = (value) => {
+        try {
+          const valueToStore = typeof value === 'function' ? value(storedValue) : value;
+          setStoredValue(valueToStore);
+          if (isBrowser) window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        } catch (error) {
+          console.error('Error writing to localStorage:', error);
         }
       };
-      reader.readAsText(file);
+      return [storedValue, setValue];
     };
 
-    return (
-      <div>
-        <div className="chart-container">
-          <div className="chart-title">데이터 관리</div>
-          <div style={{ display:'flex', gap:10, marginBottom:20, flexWrap:'wrap' }}>
-            <button className="btn btn-primary" onClick={exportData}>데이터 내보내기</button>
-            <label className="btn btn-secondary" style={{ margin:0, cursor:'pointer' }}>
-              데이터 가져오기
-              <input type="file" accept=".json" onChange={importData} style={{ display:'none' }} />
-            </label>
-          </div>
+    /* 타이머 컴포넌트 */
+    const Timer = ({ isActive, time, onStart, onStop, onReset }) => {
+      const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+      };
 
-          <div style={{ background:'#f8f9fa', padding:15, borderRadius:8 }}>
-            <h4>통계 요약</h4>
-            <p>총 운동 기록: {workoutHistory.length}개</p>
-            <p>개인 기록: {Object.keys(personalRecords).length}개</p>
-            <p>등록된 운동: {Object.values(exercises).flat().length}개</p>
-            <p>총 볼륨: {workoutHistory.reduce((t,w)=>t+w.weight*w.reps*w.sets,0).toLocaleString()}kg</p>
+      return (
+        <div className="chart-container">
+          <div className="chart-title">휴식 타이머</div>
+          <div className="timer-display">{formatTime(time)}</div>
+          <div className="timer-controls">
+            <button className={`btn ${isActive ? 'btn-danger' : 'btn-success'}`} onClick={isActive ? onStop : onStart}>
+              {isActive ? '정지' : '시작'}
+            </button>
+            <button className="btn btn-secondary" onClick={onReset}>리셋</button>
           </div>
         </div>
+      );
+    };
 
-        <div className="chart-container">
-          <div className="chart-title">앱 정보</div>
-          <div style={{ background:'#f8f9fa', padding:15, borderRadius:8 }}>
-            <h4>운동 KPR 관리 시스템</h4>
-            <p>버전: 1.0.1</p>
-            <p>개발자: Workout KPR Team</p>
-            <p>마지막 업데이트: 2025년 8월</p>
-            <br />
-            <h5>주요 기능</h5>
-            <ul style={{ paddingLeft:20 }}>
-              <li>운동 기록 관리 (부위 → 운동 선택)</li>
-              <li>개인 기록(PR) 추적</li>
-              <li>부위별 볼륨 분석</li>
-              <li>휴식 타이머</li>
-              <li>데이터 백업/복원</li>
-            </ul>
+    /* 운동 기록 폼 컴포넌트 */
+    const ExerciseForm = ({ exercises, onAddExercise, personalRecords }) => {
+      const bodyParts = Object.keys(exercises);
+      const [selectedBodyPart, setSelectedBodyPart] = useState(() => {
+        try {
+          const saved = localStorage.getItem('lastSelectedBodyPart');
+          return saved && bodyParts.includes(saved) ? saved : bodyParts[0] || '하체';
+        } catch { return bodyParts[0] || '하체'; }
+      });
+      const [selectedExercise, setSelectedExercise] = useState('');
+      const [sets, setSets] = useState(Array.from({ length: 5 }, () => ({ weight: '', reps: '' })));
+      const [notes, setNotes] = useState('');
+      const [currentPR, setCurrentPR] = useState(null); // [신규] 현재 선택된 운동의 PR 상태
+
+      useEffect(() => {
+        try { localStorage.setItem('lastSelectedBodyPart', selectedBodyPart); } catch {}
+      }, [selectedBodyPart]);
+
+      useEffect(() => {
+        setSelectedExercise('');
+        resetSets();
+      }, [selectedBodyPart]);
+
+      const resetSets = () => {
+        setSets(Array.from({ length: 5 }, () => ({ weight: '', reps: '' })));
+        setNotes('');
+        setCurrentPR(null); // 세트 초기화 시 PR 정보도 초기화
+      };
+
+      // [수정] 운동 선택 시 PR 정보 업데이트
+      const handleExerciseChange = (e) => {
+        const name = e.target.value;
+        setSelectedExercise(name);
+        setSets(Array.from({ length: 5 }, () => ({ weight: '', reps: '' }))); // 세트 입력칸 비우기
+        setNotes('');
+
+        if (name) {
+          const pr = personalRecords[name];
+          setCurrentPR(pr || null);
+        } else {
+          setCurrentPR(null);
+        }
+      };
+
+      const updateSet = (index, field, value) => {
+        const newSets = [...sets];
+        newSets[index] = { ...newSets[index], [field]: value };
+        setSets(newSets);
+      };
+
+      const calculateTotalVolume = () => sets.reduce((total, set) => (total + ((parseFloat(set.weight) || 0) * (parseInt(set.reps, 10) || 0))), 0);
+      const getValidSets = () => sets.filter(set => (parseFloat(set.weight) || 0) > 0 && (parseInt(set.reps, 10) || 0) > 0);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!selectedBodyPart || !selectedExercise) {
+          alert('운동 부위와 운동을 선택하세요.');
+          return;
+        }
+        const validSets = getValidSets();
+        if (validSets.length === 0) {
+          alert('최소 1세트의 무게와 반복수를 입력해주세요.');
+          return;
+        }
+
+        validSets.forEach((set, index) => {
+          const exerciseData = {
+            id: Date.now() + index,
+            name: selectedExercise,
+            weight: parseFloat(set.weight),
+            reps: parseInt(set.reps, 10),
+            sets: 1,
+            setNumber: index + 1,
+            totalSets: validSets.length,
+            notes: index === 0 ? notes : '',
+            date: new Date().toISOString(),
+            bodyPart: selectedBodyPart
+          };
+          onAddExercise(exerciseData);
+        });
+
+        const exerciseNameForAlert = selectedExercise;
+        setSelectedExercise('');
+        resetSets();
+        alert(`${exerciseNameForAlert} ${validSets.length}세트가 기록되었습니다!`);
+      };
+
+      const currentExerciseList = exercises[selectedBodyPart] || [];
+
+      return (
+        <div>
+          <div className="exercise-selection">
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">부위 선택</label>
+                <select className="form-select" value={selectedBodyPart} onChange={(e) => setSelectedBodyPart(e.target.value)}>
+                  {bodyParts.map((part) => <option key={part} value={part}>{part}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">운동 선택</label>
+                <select className="form-select" value={selectedExercise} onChange={handleExerciseChange}>
+                  <option value="">운동을 선택하세요</option>
+                  {currentExerciseList.map((exercise, index) => <option key={index} value={exercise.name}>{exercise.name}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {selectedExercise && (
+            <div className="sets-container">
+              <div className="chart-title">{selectedExercise} - 세트별 기록</div>
+              
+              {/* [신규] 개인 최고 기록(PR) 표시 */}
+              {currentPR ? (
+                <div className="pr-display">
+                  🏆 개인 최고기록 (PR): {currentPR.weight}kg x {currentPR.reps}회 ({new Date(currentPR.date).toLocaleDateString('ko-KR')})
+                </div>
+              ) : (
+                <div className="pr-display" style={{ background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }}>
+                  아직 이 운동의 개인 기록이 없습니다.
+                </div>
+              )}
+
+              {sets.map((set, index) => (
+                <div key={index} className="set-row">
+                  <div className="set-number">{index + 1}세트</div>
+                  <input type="number" className="set-input" placeholder="무게 (kg)" value={set.weight} onChange={(e) => updateSet(index, 'weight', e.target.value)} step="0.5" min="0" inputMode="decimal" />
+                  <input type="number" className="set-input" placeholder="반복수" value={set.reps} onChange={(e) => updateSet(index, 'reps', e.target.value)} min="1" inputMode="numeric" />
+                  <div style={{ fontSize: '.9rem', color: '#6c757d', minWidth: '80px' }}>
+                    {(parseFloat(set.weight) || 0) * (parseInt(set.reps, 10) || 0)}kg
+                  </div>
+                </div>
+              ))}
+              <div className="total-volume">총 볼륨: {calculateTotalVolume().toLocaleString()}kg ({getValidSets().length}세트)</div>
+              <div className="form-group" style={{ marginTop: '15px' }}>
+                <label className="form-label">메모</label>
+                <input type="text" className="form-input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="운동에 대한 메모를 입력하세요" />
+              </div>
+              <button type="button" className="btn btn-primary" style={{ width: '100%', marginTop: '15px' }} onClick={handleSubmit} disabled={getValidSets().length === 0}>
+                {selectedExercise} 운동 완료 ({getValidSets().length}세트)
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    };
+    
+    /* 라이브러리 컴포넌트 */
+    function Library({ bodyParts, exercises, setExercises }) {
+      const [searchTerm, setSearchTerm] = useState('');
+      const [selectedBodyPart, setSelectedBodyPart] = useState('전체');
+      const [newExercise, setNewExercise] = useState({ name: '', bodyPart: '하체', weight: '', reps: '', sets: '3' });
+      const [isAddingExercise, setIsAddingExercise] = useState(false);
+
+      const addNewExercise = () => {
+        if (!newExercise.name.trim()) return;
+        const exerciseData = {
+          name: newExercise.name.trim(),
+          weight: parseFloat(newExercise.weight) || 0,
+          reps: parseInt(newExercise.reps, 10) || 12,
+          sets: parseInt(newExercise.sets, 10) || 3
+        };
+        setExercises(prev => ({ ...prev, [newExercise.bodyPart]: [...(prev[newExercise.bodyPart] || []), exerciseData] }));
+        setNewExercise({ name:'', bodyPart:'하체', weight:'', reps:'', sets:'3' });
+        setIsAddingExercise(false);
+      };
+
+      const deleteExercise = (bodyPart, exerciseIndex) => {
+        setExercises(prev => ({ ...prev, [bodyPart]: (prev[bodyPart] || []).filter((_, idx) => idx !== exerciseIndex) }));
+      };
+
+      const filteredExercises = () => {
+        const result = [];
+        Object.entries(exercises).forEach(([part, list]) => {
+          if (selectedBodyPart === '전체' || selectedBodyPart === part) {
+            list.forEach((ex, idx) => {
+              if (ex.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+                result.push({ ...ex, bodyPart: part, index: idx });
+              }
+            });
+          }
+        });
+        return result;
+      };
+
+      return (
+        <div>
+          <div className="workout-form">
+            <div className="form-group"><label className="form-label">검색</label><input type="text" className="form-input" placeholder="운동 이름으로 검색..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">부위 필터</label><select className="form-select" value={selectedBodyPart} onChange={(e)=>setSelectedBodyPart(e.target.value)}><option value="전체">전체</option>{bodyParts.map(part => <option key={part} value={part}>{part}</option>)}</select></div>
+            <button className="btn btn-primary" onClick={()=>setIsAddingExercise(!isAddingExercise)} style={{ width:'100%' }}>{isAddingExercise ? '취소' : '새 운동 추가'}</button>
+          </div>
+          {isAddingExercise && (<div className="workout-form"><div className="form-group"><label className="form-label">운동 이름</label><input type="text" className="form-input" value={newExercise.name} onChange={(e)=>setNewExercise(prev=>({...prev, name:e.target.value}))} placeholder="운동 이름을 입력하세요" /></div><div className="form-row"><div className="form-group"><label className="form-label">부위</label><select className="form-select" value={newExercise.bodyPart} onChange={(e)=>setNewExercise(prev=>({...prev, bodyPart:e.target.value}))}>{bodyParts.map(part => <option key={part} value={part}>{part}</option>)}</select></div><div className="form-group"><label className="form-label">기본 무게</label><input type="number" className="form-input" value={newExercise.weight} onChange={(e)=>setNewExercise(prev=>({...prev, weight:e.target.value}))} step="0.5" inputMode="decimal" /></div><div className="form-group"><label className="form-label">기본 반복수</label><input type="number" className="form-input" value={newExercise.reps} onChange={(e)=>setNewExercise(prev=>({...prev, reps:e.target.value}))} inputMode="numeric" /></div></div><button className="btn btn-success" onClick={addNewExercise} style={{ width:'100%' }}>운동 추가하기</button></div>)}
+          <div className="chart-container"><div className="chart-title">운동 라이브러리 ({filteredExercises().length}개)</div><div style={{ maxHeight:'400px', overflowY:'auto' }}>{filteredExercises().map((exercise, idx) => (<div key={`${exercise.bodyPart}-${exercise.name}-${idx}`} className="exercise-item"><div className="exercise-name">{exercise.name}<span style={{ background:'#e9ecef', color:'#6c757d', padding:'2px 8px', borderRadius:'12px', fontSize:'.8rem', marginLeft:'8px' }}>{exercise.bodyPart}</span></div><div className="exercise-stats"><div className="stat">⚖️ {exercise.weight}kg</div><div className="stat">🔢 {exercise.reps}회</div><div className="stat">📊 {exercise.sets}세트</div><button className="btn btn-danger" style={{ padding:'4px 8px', fontSize:'.8rem' }} onClick={()=>deleteExercise(exercise.bodyPart, exercise.index)}>삭제</button></div></div>))}</div></div>
+        </div>
+      );
+    }
+
+    /* 메인 앱 */
+    const WorkoutKPRApp = () => {
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [exercises, setExercises] = useLocalStorage('exercises', initialExercises);
+      const [workoutHistory, setWorkoutHistory] = useLocalStorage('workoutHistory', []);
+      const [personalRecords, setPersonalRecords] = useLocalStorage('personalRecords', {});
+      const [timerTime, setTimerTime] = useState(0);
+      const [isTimerActive, setIsTimerActive] = useState(false);
+      const timerRef = useRef(null);
+
+      const bodyParts = Object.keys(exercises);
+
+      useEffect(() => {
+        if (isTimerActive) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          timerRef.current = setInterval(() => setTimerTime(prev => prev + 1), 1000);
+        } else if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
+      }, [isTimerActive]);
+
+      const calculateOneRM = (weight, reps) => {
+        if (!Number.isFinite(weight) || !Number.isFinite(reps) || reps <= 0) return 0;
+        if (reps === 1) return Math.round(weight);
+        return Math.round(weight * (1 + reps / 30));
+      };
+
+      const addWorkoutRecord = (exerciseData) => {
+        setWorkoutHistory(prev => [exerciseData, ...prev]);
+        const exerciseName = exerciseData.name;
+        const currentPR = personalRecords[exerciseName];
+        const newOneRM = calculateOneRM(exerciseData.weight, exerciseData.reps);
+        if (!currentPR || newOneRM > currentPR.oneRM) {
+          setPersonalRecords(prev => ({ ...prev, [exerciseName]: { weight: exerciseData.weight, reps: exerciseData.reps, oneRM: newOneRM, date: exerciseData.date } }));
+        }
+      };
+
+      const copyTodaysWorkoutToClipboard = () => {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todaysWorkouts = workoutHistory.filter(w => new Date(w.date) >= startOfToday).reverse();
+        if (todaysWorkouts.length === 0) {
+            alert('오늘 기록된 운동이 없습니다.');
+            return;
+        }
+        const groupedByExercise = todaysWorkouts.reduce((acc, workout) => {
+            if (!acc[workout.name]) acc[workout.name] = [];
+            acc[workout.name].push(workout);
+            return acc;
+        }, {});
+        let clipboardText = `[${now.toLocaleDateString('ko-KR')} 운동 기록]\n\n`;
+        for (const exerciseName in groupedByExercise) {
+            clipboardText += `🔥 ${exerciseName}\n`;
+            const sets = groupedByExercise[exerciseName];
+            const mainNote = sets.find(s => s.notes)?.notes || '';
+            sets.forEach(set => { clipboardText += `  - ${set.setNumber}세트: ${set.weight}kg x ${set.reps}회\n`; });
+            if (mainNote) clipboardText += `  📝 메모: ${mainNote}\n`;
+            clipboardText += '\n';
+        }
+        const textarea = document.createElement('textarea');
+        textarea.value = clipboardText.trim();
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            alert('오늘의 운동 기록이 클립보드에 복사되었습니다!');
+        } catch (err) {
+            alert('복사에 실패했습니다.');
+            console.error('클립보드 복사 실패: ', err);
+        }
+        document.body.removeChild(textarea);
+      };
+
+      const calculateStats = () => {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const sevenDaysAgo = new Date(now.getTime() - 7*24*60*60*1000);
+        const thirtyDaysAgo = new Date(now.getTime() - 30*24*60*60*1000);
+        const todayWorkouts = workoutHistory.filter(w => new Date(w.date) >= startOfToday).length;
+        const weekWorkouts = workoutHistory.filter(w => new Date(w.date) >= sevenDaysAgo).length;
+        const monthVolume = workoutHistory.filter(w => new Date(w.date) >= thirtyDaysAgo).reduce((t,w)=>t + (w.weight*w.reps*w.sets), 0);
+        const totalPRs = Object.keys(personalRecords).length;
+        return { todayWorkouts, weekWorkouts, monthVolume, totalPRs };
+      };
+
+      const stats = calculateStats();
+      const startTimer = () => setIsTimerActive(true);
+      const stopTimer = () => setIsTimerActive(false);
+      const resetTimer = () => { setIsTimerActive(false); setTimerTime(0); };
+
+      const renderDashboard = () => (
+        <div>
+          <div className="dashboard-stats">
+            <div className="stat-card"><div className="stat-number">{stats.todayWorkouts}</div><div className="stat-label">오늘 운동</div></div>
+            <div className="stat-card"><div className="stat-number">{stats.weekWorkouts}</div><div className="stat-label">이번 주 운동</div></div>
+            <div className="stat-card"><div className="stat-number">{(stats.monthVolume/1000).toFixed(1)}K</div><div className="stat-label">이번 달 볼륨</div></div>
+            <div className="stat-card"><div className="stat-number">{stats.totalPRs}</div><div className="stat-label">개인 기록</div></div>
+          </div>
+          <Timer isActive={isTimerActive} time={timerTime} onStart={startTimer} onStop={stopTimer} onReset={resetTimer} />
+          <div className="chart-container">
+            <div className="chart-title">최근 운동 기록</div>
+            {workoutHistory.length === 0 ? (<div style={{ textAlign:'center', color:'#6c757d', padding:'20px' }}>아직 운동 기록이 없습니다.</div>) : (workoutHistory.slice(0,5).map((workout, idx)=>(<div key={workout.id ?? idx} className="recent-workout"><div className="workout-date">{new Date(workout.date).toLocaleDateString('ko-KR')}</div><div className="workout-summary"><span><strong>{workout.name}</strong>{workout.setNumber && <span style={{ color:'#6c757d', marginLeft:8 }}>({workout.setNumber}/{workout.totalSets}세트)</span>}</span><span>{workout.weight}kg × {workout.reps}회</span></div></div>)))}
           </div>
         </div>
-      </div>
-    );
-  };
+      );
 
-  return (
-    <div className="container">
-      <div className="header">
-        <h1>💪 운동 KPR 관리 시스템</h1>
-        <p>체계적인 운동 기록으로 더 나은 퍼포먼스를 만들어보세요</p>
-      </div>
+      const renderWorkout = () => (
+        <div>
+          <ExerciseForm exercises={exercises} onAddExercise={addWorkoutRecord} personalRecords={personalRecords} />
+          <div style={{ margin: '20px 0', textAlign: 'center' }}>
+            <button className="btn btn-success" onClick={copyTodaysWorkoutToClipboard}>📋 오늘 운동 기록 복사</button>
+          </div>
+          <div className="workout-sections">
+            {bodyParts.map(part => (
+              <div key={part} className={`workout-section ${part}`}>
+                <div className="section-title">📍 {part}</div>
+                {(exercises[part] || []).map((exercise, idx) => {
+                  // [수정] 각 운동의 가장 최근 기록을 찾음
+                  const lastRecord = workoutHistory.find(h => h.name === exercise.name);
+                  return (
+                    <div key={`${part}-${exercise.name}-${idx}`} className="simple-exercise-item">
+                      <span className="exercise-name-simple">{exercise.name}</span>
+                      {lastRecord ? (
+                        <span className="last-record-info">
+                          최근: {lastRecord.weight}kg × {lastRecord.reps}회
+                        </span>
+                      ) : (
+                        <span className="last-record-info" style={{ color: '#9ca3af' }}>
+                          기록 없음
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
 
-      <div className="nav-tabs">
-        <button className={`nav-tab ${activeTab==='dashboard' ? 'active' : ''}`} onClick={()=>setActiveTab('dashboard')}>📊 대시보드</button>
-        <button className={`nav-tab ${activeTab==='workout' ? 'active' : ''}`} onClick={()=>setActiveTab('workout')}>🏋️ 운동기록</button>
-        <button className={`nav-tab ${activeTab==='progress' ? 'active' : ''}`} onClick={()=>setActiveTab('progress')}>📈 진도추적</button>
-        <button className={`nav-tab ${activeTab==='library' ? 'active' : ''}`} onClick={()=>setActiveTab('library')}>📚 라이브러리</button>
-        <button className={`nav-tab ${activeTab==='settings' ? 'active' : ''}`} onClick={()=>setActiveTab('settings')}>⚙️ 설정</button>
-      </div>
+      const renderProgress = () => (
+        <div>
+          <div className="chart-container">
+            <div className="chart-title">개인 기록 (PR)</div>
+            {Object.keys(personalRecords).length === 0 ? (<div style={{ textAlign:'center', color:'#6c757d', padding:'20px' }}>아직 개인 기록이 없습니다.</div>) : (Object.entries(personalRecords).map(([name, record])=> (<div key={name} className="progress-item"><div className="progress-header"><span><strong>{name}</strong></span><span>{record.weight}kg × {record.reps}회</span></div><div style={{ fontSize:'.9rem', color:'#6c757d' }}>1RM: {record.oneRM}kg | {new Date(record.date).toLocaleDateString('ko-KR')}</div></div>)))}
+          </div>
+          <div className="chart-container">
+            <div className="chart-title">부위별 볼륨 분석</div>
+            {bodyParts.map(part => {
+              const vol = workoutHistory.filter(w=>w.bodyPart===part).reduce((t,w)=>t+(w.weight*w.reps*w.sets),0);
+              const maxVol = Math.max(...bodyParts.map(bp => workoutHistory.filter(w=>w.bodyPart===bp).reduce((t,w)=>t+(w.weight*w.reps*w.sets),0)), 0);
+              const pct = maxVol>0 ? (vol/maxVol)*100 : 0;
+              return (<div key={part} className="progress-item"><div className="progress-header"><span>{part}</span><span>{vol.toLocaleString()}kg</span></div><div className="progress-bar"><div className="progress-fill" style={{ width:`${pct}%` }}></div></div></div>);
+            })}
+          </div>
+          <div className="chart-container">
+            <div className="chart-title">최근 운동 트렌드</div>
+            {workoutHistory.length === 0 ? (<div style={{ textAlign:'center', color:'#6c757d', padding:'20px' }}>운동 기록이 없습니다.</div>) : (workoutHistory.slice(0,10).map((w) => (<div key={w.id} className="recent-workout"><div className="workout-date">{new Date(w.date).toLocaleDateString('ko-KR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</div><div className="workout-summary"><span><strong>{w.name}</strong><span style={{ color:'#6c757d', marginLeft:8 }}>({w.bodyPart})</span>{w.setNumber && <span style={{ color:'#6c757d', marginLeft:8 }}>{w.setNumber}/{w.totalSets}세트</span>}</span><span>{w.weight}kg × {w.reps}회<span style={{ color:'#667eea', marginLeft:8 }}>= {(w.weight*w.reps*w.sets).toLocaleString()}kg</span></span></div>{w.notes && <div style={{ fontSize:'.9rem', color:'#6c757d', marginTop:5 }}>📝 {w.notes}</div>}</div>)))}
+          </div>
+        </div>
+      );
 
-      <div className="content-area">
-        {activeTab==='dashboard' && renderDashboard()}
-        {activeTab==='workout' && renderWorkout()}
-        {activeTab==='progress' && renderProgress()}
-        {activeTab==='library' && <Library bodyParts={Object.keys(exercises)} exercises={exercises} setExercises={setExercises} />}
-        {activeTab==='settings' && renderSettings()}
-      </div>
-    </div>
-  );
-};
+      return (
+        <div className="container">
+          <div className="header">
+            <h1>💪 운동 KPR 관리 시스템</h1>
+            <p>세트별 기록으로 더 정확한 운동 관리를 경험하세요</p>
+          </div>
 
-/* React 18 마운트 */
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<WorkoutKPRApp />);
-</script>
+          <div className="nav-tabs">
+            <button className={`nav-tab ${activeTab==='dashboard' ? 'active' : ''}`} onClick={()=>setActiveTab('dashboard')}>📊 대시보드</button>
+            <button className={`nav-tab ${activeTab==='workout' ? 'active' : ''}`} onClick={()=>setActiveTab('workout')}>🏋️ 운동기록</button>
+            <button className={`nav-tab ${activeTab==='progress' ? 'active' : ''}`} onClick={()=>setActiveTab('progress')}>📈 진도추적</button>
+            <button className={`nav-tab ${activeTab==='library' ? 'active' : ''}`} onClick={()=>setActiveTab('library')}>📚 라이브러리</button>
+            {/* [삭제] 설정 탭 버튼 */}
+          </div>
+
+          <div className="content-area">
+            {activeTab==='dashboard' && renderDashboard()}
+            {activeTab==='workout' && renderWorkout()}
+            {activeTab==='progress' && renderProgress()}
+            {activeTab==='library' && <Library bodyParts={Object.keys(exercises)} exercises={exercises} setExercises={setExercises} />}
+            {/* [삭제] 설정 탭 렌더링 */}
+          </div>
+        </div>
+      );
+    };
+
+    /* React 18 마운트 */
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<WorkoutKPRApp />);
+  </script>
 </body>
 </html>
