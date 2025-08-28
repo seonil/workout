@@ -101,8 +101,18 @@ exercises: {
     // 데이터 가져오기
     getData(key) {
         try {
-            const data = localStorage.getItem(this.storagePrefix + key);
-            return data ? JSON.parse(data) : null;
+            const raw = localStorage.getItem(this.storagePrefix + key);
+            if (!raw) return null;
+
+            // 안전장치: 비정상적으로 큰 기록은 즉시 파싱하지 않고 빈값 반환하여 페이지 먹통 방지
+            // 사용자가 정리할 수 있도록 콘솔 경고를 남깁니다.
+            const MAX_SAFE_BYTES = 5_000_000; // 약 5MB 문자열 기준
+            if (key === 'workoutHistory' && raw.length > MAX_SAFE_BYTES) {
+                console.warn('[WorkoutDataManager] workoutHistory가 매우 큽니다 (', raw.length, 'bytes ). 페이지 성능을 위해 일시적으로 빈 목록을 사용합니다. 중복/과다 데이터 정리가 필요합니다.');
+                return [];
+            }
+
+            return JSON.parse(raw);
         } catch (error) {
             console.error(`Error getting data for ${key}:`, error);
             return null;
