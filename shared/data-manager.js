@@ -18,8 +18,8 @@ class WorkoutDataManager {
     async importFromCloud(maxRecords = 500) {
         if (!this.cloudDataManager || !this.cloudDataManager.currentUser) return;
         try {
-            // Import workout records
-            const cloudRecords = await this.cloudDataManager.getWorkoutRecords();
+            // Import workout records (cloud only)
+            const cloudRecords = await this.cloudDataManager.getWorkoutRecords(false);
             if (Array.isArray(cloudRecords) && cloudRecords.length) {
                 const history = this.getData('workoutHistory') || [];
                 const byKey = new Map();
