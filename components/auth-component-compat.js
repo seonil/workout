@@ -56,7 +56,21 @@ class AuthComponent {
                     <h3>🏋️ KPR 추적기</h3>
                     <p>클라우드 동기화로 어디서나 운동 기록을 관리하세요</p>
                 </div>
-            
+                
+                <div class="auth-benefits">
+                    <div class="benefit-item">
+                        <span class="benefit-icon">☁️</span>
+                        <span>클라우드 백업</span>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">📱</span>
+                        <span>기기 간 동기화</span>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">📊</span>
+                        <span>진행 상황 분석</span>
+                    </div>
+                </div>
                 
                 <div class="auth-buttons">
                     <button class="btn-google" id="google-login-btn">
