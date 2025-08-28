@@ -124,9 +124,10 @@ class CloudDataManager {
     // 운동 기록 저장
     async saveWorkoutRecord(record) {
         // 로컬에 먼저 저장
-        if (this.localDataManager) {
-            await this.localDataManager.addWorkoutRecord([record]);
-        }
+        // 로컬 반영은 호출측(WorkoutDataManager)에서 처리. 여기서 호출하면 재귀/중복 저장 발생
+        // if (this.localDataManager) {
+        //     await this.localDataManager.addWorkoutRecord([record]);
+        // }
         
         // 온라인이고 로그인된 경우 클라우드에도 저장
         if (!this.isOnline || !this.db || !this.currentUser) {
@@ -275,19 +276,25 @@ class CloudDataManager {
         try {
             console.log('🔄 로컬 데이터 클라우드 동기화 시작...');
             
-            // 로컬 운동 기록 동기화
+            // 로컬 운동 기록 동기화 (성공 시 로컬에도 synced 반영)
             const localRecords = this.localDataManager.getData('workoutHistory') || [];
             let syncedCount = 0;
-            
-            for (const record of localRecords) {
-                if (!record.synced) {
+            let changed = false;
+            for (let i = 0; i < localRecords.length; i++) {
+                const rec = localRecords[i];
+                if (!rec.synced) {
                     try {
-                        await this.saveWorkoutRecord({...record, synced: true});
+                        await this.saveWorkoutRecord({ ...rec, synced: true });
+                        localRecords[i] = { ...rec, synced: true };
                         syncedCount++;
+                        changed = true;
                     } catch (error) {
                         console.error('운동 기록 동기화 실패:', error);
                     }
                 }
+            }
+            if (changed) {
+                this.localDataManager.setData('workoutHistory', localRecords);
             }
             
             // 로컬 개인 기록 동기화
