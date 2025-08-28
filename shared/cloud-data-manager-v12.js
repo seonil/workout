@@ -161,10 +161,10 @@ class CloudDataManager {
     }
     
     // 운동 기록 조회
-    async getWorkoutRecords() {
-        // 로그인되지 않았거나 오프라인인 경우 로컬 데이터 반환
+    async getWorkoutRecords(includeLocal = true) {
+        // 로그인되지 않았거나 오프라인인 경우
         if (!this.isOnline || !this.db || !this.currentUser) {
-            return this.localDataManager?.getWorkoutRecords() || [];
+            return includeLocal ? (this.localDataManager?.getWorkoutRecords() || []) : [];
         }
         
         try {
@@ -188,15 +188,16 @@ class CloudDataManager {
             });
             
             console.log('☁️ 클라우드에서 운동 기록 조회:', records.length + '개');
-            
-            // 로컬과 클라우드 데이터 병합
-            const localRecords = this.localDataManager?.getWorkoutRecords() || [];
-            const mergedRecords = this.mergeRecords(localRecords, records);
-            
-            return mergedRecords;
+
+            // 로컬과 클라우드 데이터 병합 여부
+            if (includeLocal) {
+                const localRecords = this.localDataManager?.getWorkoutRecords() || [];
+                return this.mergeRecords(localRecords, records);
+            }
+            return records;
         } catch (error) {
             console.error('❌ 클라우드 조회 실패 - 로컬 데이터 사용:', error);
-            return this.localDataManager?.getWorkoutRecords() || [];
+            return includeLocal ? (this.localDataManager?.getWorkoutRecords() || []) : [];
         }
     }
     
