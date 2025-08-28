@@ -22,7 +22,7 @@ class NavigationManager {
         return this.navigation;
     }
     
-    // 사용자 정보 동기화
+    // 사용자 정보 동기화 (탭 간 로그인 상태 유지)
     syncUserInfo() {
         try {
             // localStorage에서 사용자 정보 확인
@@ -31,6 +31,23 @@ class NavigationManager {
                 const userData = JSON.parse(userDataStr);
                 this.updateUser(userData);
             }
+            
+            // storage 이벤트 리스너 등록 (다른 탭에서 로그인/로그아웃 감지)
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'workout-user-info') {
+                    if (e.newValue) {
+                        try {
+                            const userData = JSON.parse(e.newValue);
+                            this.updateUser(userData);
+                        } catch (error) {
+                            console.error('탭 간 사용자 정보 동기화 실패:', error);
+                        }
+                    } else {
+                        // 로그아웃된 경우
+                        this.updateUser(null);
+                    }
+                }
+            });
         } catch (error) {
             console.log('사용자 정보 동기화 실패 (정상적인 경우일 수 있음):', error);
         }

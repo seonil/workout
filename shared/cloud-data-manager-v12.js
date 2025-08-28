@@ -276,7 +276,7 @@ class CloudDataManager {
             console.log('🔄 로컬 데이터 클라우드 동기화 시작...');
             
             // 로컬 운동 기록 동기화
-            const localRecords = this.localDataManager.getWorkoutRecords();
+            const localRecords = this.localDataManager.getData('workoutHistory') || [];
             let syncedCount = 0;
             
             for (const record of localRecords) {
@@ -291,7 +291,7 @@ class CloudDataManager {
             }
             
             // 로컬 개인 기록 동기화
-            const localPRs = this.localDataManager.getPersonalRecords();
+            const localPRs = this.localDataManager.getData('personalRecords') || {};
             let prSyncedCount = 0;
             
             for (const [exercise, record] of Object.entries(localPRs)) {
@@ -303,9 +303,55 @@ class CloudDataManager {
                 }
             }
             
+            // 사용자 추가 운동 동기화
+            await this.syncUserExercisesToCloud();
+            
+            // 클라우드에서 사용자 운동 가져와서 로컬과 병합
+            if (this.localDataManager.syncUserExercisesFromCloud) {
+                await this.localDataManager.syncUserExercisesFromCloud();
+            }
+            
             console.log(`✅ 동기화 완료 - 운동기록: ${syncedCount}개, 개인기록: ${prSyncedCount}개`);
         } catch (error) {
             console.error('❌ 데이터 동기화 실패:', error);
+        }
+    }
+    
+    // 로컬 사용자 추가 운동을 클라우드로 동기화
+    async syncUserExercisesToCloud() {
+        if (!this.localDataManager) return;
+        
+        try {
+            const LATEST_EXERCISE_LIBRARY = {
+                '하체': ['바벨 스쿼트', '루마니안 데드리프트', '힙 쓰러스트', '레그 프레스', '불가리안 스플릿 스쿼트', '스미스머신 스쿼트', '시티드 레그 컬', '레그 익스텐션', '스탠딩 카프 레이즈'],
+                '등': ['중량 풀업/어시스트 풀업', '체스트 서포티드 로우', '바벨 로우', '랫풀다운', '원암 덤벨 로우', '시티드 케이블 로우'],
+                '가슴': ['인클라인 덤벨 프레스', '바벨 벤치프레스', '중량 딥스', '머신 체스트 프레스', '덤벨 벤치프레스', '케이블 크로스오버', '펙덱 플라이'],
+                '어깨': ['오버헤드 프레스', '케이블 래터럴 레이즈', '사이드 래터럴 레이즈', '페이스 풀', '리버스 펙덱 플라이'],
+                '팔': ['인클라인 덤벨 컬', '바벨 컬', '오버헤드 익스텐션', '스컬 크러셔', '클로즈 그립 벤치프레스', '케이블 푸쉬다운'],
+                '코어': ['행잉 레그 레이즈', '케이블 크런치', '앱 롤아웃', '플랭크', '사이드 플랭크', '복부서킷']
+            };
+            
+            const localExercises = this.localDataManager.getData('exercises') || {};
+            let userExerciseSyncCount = 0;
+            
+            for (const [bodyPart, exercises] of Object.entries(localExercises)) {
+                const userAddedExercises = exercises.filter(exercise => 
+                    !LATEST_EXERCISE_LIBRARY[bodyPart]?.includes(exercise)
+                );
+                
+                for (const exercise of userAddedExercises) {
+                    try {
+                        await this.saveUserExercise(bodyPart, exercise);
+                        userExerciseSyncCount++;
+                    } catch (error) {
+                        console.error('사용자 운동 동기화 실패:', error);
+                    }
+                }
+            }
+            
+            console.log(`☁️ 사용자 운동 동기화 완료: ${userExerciseSyncCount}개`);
+        } catch (error) {
+            console.error('❌ 사용자 운동 동기화 실패:', error);
         }
     }
     
@@ -342,6 +388,89 @@ class CloudDataManager {
         return merged;
     }
     
+    // 사용자 추가 운동 저장
+    async saveUserExercise(bodyPart, exerciseName) {
+        if (!this.isOnline || !this.db || !this.currentUser) {
+            return false;
+        }
+        
+        try {
+            const userId = this.getUserId();
+            const exerciseId = `${userId}_${bodyPart}_${exerciseName.replace(/\s+/g, '_')}`;
+            
+            const userExercise = {
+                userId: userId,
+                bodyPart: bodyPart,
+                exerciseName: exerciseName,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            };
+            
+            await setDoc(doc(this.db, 'userExercises', exerciseId), userExercise);
+            console.log('☁️ 사용자 운동 클라우드 저장:', exerciseName);
+            return true;
+        } catch (error) {
+            console.error('❌ 사용자 운동 클라우드 저장 실패:', error);
+            return false;
+        }
+    }
+    
+    // 사용자 추가 운동 제거
+    async removeUserExercise(bodyPart, exerciseName) {
+        if (!this.isOnline || !this.db || !this.currentUser) {
+            return false;
+        }
+        
+        try {
+            const userId = this.getUserId();
+            const exerciseId = `${userId}_${bodyPart}_${exerciseName.replace(/\s+/g, '_')}`;
+            
+            await deleteDoc(doc(this.db, 'userExercises', exerciseId));
+            console.log('☁️ 사용자 운동 클라우드 제거:', exerciseName);
+            return true;
+        } catch (error) {
+            console.error('❌ 사용자 운동 클라우드 제거 실패:', error);
+            return false;
+        }
+    }
+    
+    // 사용자 추가 운동 목록 조회
+    async getUserExercises() {
+        if (!this.isOnline || !this.db || !this.currentUser) {
+            return {};
+        }
+        
+        try {
+            const userId = this.getUserId();
+            const q = query(
+                collection(this.db, 'userExercises'),
+                where('userId', '==', userId)
+            );
+            
+            const querySnapshot = await getDocs(q);
+            const exercises = {};
+            
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                if (!exercises[data.bodyPart]) {
+                    exercises[data.bodyPart] = [];
+                }
+                exercises[data.bodyPart].push(data.exerciseName);
+            });
+            
+            // 각 부위별 운동을 알파벳 순으로 정렬
+            Object.keys(exercises).forEach(bodyPart => {
+                exercises[bodyPart].sort();
+            });
+            
+            console.log('☁️ 클라우드에서 사용자 운동 조회:', Object.values(exercises).reduce((sum, arr) => sum + arr.length, 0) + '개');
+            return exercises;
+        } catch (error) {
+            console.error('❌ 클라우드 사용자 운동 조회 실패:', error);
+            return {};
+        }
+    }
+
     // 1RM 계산
     calculateOneRM(weight, reps) {
         if (reps === 1) return weight;

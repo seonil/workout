@@ -197,8 +197,8 @@ exercises: {
         return personalRecords[exerciseName] || null;
     }
 
-    // 운동 라이브러리 관리
-    addExercise(bodyPart, exerciseName) {
+    // 운동 라이브러리 관리 (클라우드 동기화 포함)
+    async addExercise(bodyPart, exerciseName) {
         const exercises = this.getData('exercises') || {};
         if (!exercises[bodyPart]) {
             exercises[bodyPart] = [];
@@ -208,16 +208,34 @@ exercises: {
             exercises[bodyPart].push(exerciseName);
             exercises[bodyPart].sort();
             this.setData('exercises', exercises);
+            
+            // 클라우드에도 사용자 추가 운동 저장
+            if (this.cloudDataManager) {
+                try {
+                    await this.cloudDataManager.saveUserExercise(bodyPart, exerciseName);
+                } catch (error) {
+                    console.warn('클라우드 운동 저장 실패, 로컬에만 저장됨:', error);
+                }
+            }
             return true;
         }
         return false;
     }
 
-    removeExercise(bodyPart, exerciseName) {
+    async removeExercise(bodyPart, exerciseName) {
         const exercises = this.getData('exercises') || {};
         if (exercises[bodyPart]) {
             exercises[bodyPart] = exercises[bodyPart].filter(name => name !== exerciseName);
             this.setData('exercises', exercises);
+            
+            // 클라우드에서도 사용자 추가 운동 제거
+            if (this.cloudDataManager) {
+                try {
+                    await this.cloudDataManager.removeUserExercise(bodyPart, exerciseName);
+                } catch (error) {
+                    console.warn('클라우드 운동 제거 실패:', error);
+                }
+            }
             return true;
         }
         return false;
@@ -361,8 +379,8 @@ exercises: {
         return true;
     }
 
-    // 운동 라이브러리 업데이트 (새로운 운동들 반영)
-    updateExerciseLibraryFromLatest() {
+    // 운동 라이브러리 업데이트 (정리된 최신 버전)
+    async updateExerciseLibraryFromLatest() {
         const LATEST_EXERCISE_LIBRARY = {
             '하체': [
                 '바벨 스쿼트', 
@@ -417,25 +435,77 @@ exercises: {
             ]
         };
 
+        // 기존 사용자 추가 운동들 보존
         const currentExercises = this.getData('exercises') || {};
-        const updatedExercises = { ...currentExercises };
+        const userAddedExercises = {};
         
-        // 새로운 운동들을 기존 데이터에 병합
-        Object.keys(LATEST_EXERCISE_LIBRARY).forEach(bodyPart => {
-            if (!updatedExercises[bodyPart]) {
-                updatedExercises[bodyPart] = [];
-            }
-            
-            // 중복 제거하면서 새로운 운동 추가
-            LATEST_EXERCISE_LIBRARY[bodyPart].forEach(exercise => {
-                if (!updatedExercises[bodyPart].includes(exercise)) {
-                    updatedExercises[bodyPart].push(exercise);
+        // 기본 라이브러리에 없는 운동들을 사용자 추가 운동으로 분류
+        Object.keys(currentExercises).forEach(bodyPart => {
+            if (currentExercises[bodyPart]) {
+                const userExercises = currentExercises[bodyPart].filter(exercise => 
+                    !LATEST_EXERCISE_LIBRARY[bodyPart]?.includes(exercise)
+                );
+                if (userExercises.length > 0) {
+                    userAddedExercises[bodyPart] = userExercises;
                 }
-            });
+            }
         });
         
-        this.setData('exercises', updatedExercises);
-        console.log('운동 라이브러리가 최신 버전으로 업데이트되었습니다.');
+        // 최신 라이브러리로 초기화
+        const cleanedExercises = JSON.parse(JSON.stringify(LATEST_EXERCISE_LIBRARY));
+        
+        // 사용자 추가 운동들을 다시 병합
+        Object.keys(userAddedExercises).forEach(bodyPart => {
+            if (!cleanedExercises[bodyPart]) {
+                cleanedExercises[bodyPart] = [];
+            }
+            cleanedExercises[bodyPart].push(...userAddedExercises[bodyPart]);
+            cleanedExercises[bodyPart].sort();
+        });
+        
+        this.setData('exercises', cleanedExercises);
+        
+        // 클라우드에서 사용자 추가 운동 동기화
+        if (this.cloudDataManager) {
+            try {
+                await this.syncUserExercisesFromCloud();
+            } catch (error) {
+                console.warn('클라우드 운동 동기화 실패:', error);
+            }
+        }
+        
+        console.log('✅ 운동 라이브러리가 정리되고 최신 버전으로 업데이트되었습니다.');
+        console.log('📚 현재 운동 수:', Object.values(cleanedExercises).reduce((sum, arr) => sum + arr.length, 0));
+    }
+    
+    // 클라우드에서 사용자 추가 운동 동기화
+    async syncUserExercisesFromCloud() {
+        if (!this.cloudDataManager) return;
+        
+        try {
+            const cloudExercises = await this.cloudDataManager.getUserExercises();
+            const currentExercises = this.getData('exercises') || {};
+            
+            // 클라우드 운동들을 로컬에 병합
+            Object.keys(cloudExercises).forEach(bodyPart => {
+                if (!currentExercises[bodyPart]) {
+                    currentExercises[bodyPart] = [];
+                }
+                
+                cloudExercises[bodyPart].forEach(exercise => {
+                    if (!currentExercises[bodyPart].includes(exercise)) {
+                        currentExercises[bodyPart].push(exercise);
+                    }
+                });
+                
+                currentExercises[bodyPart].sort();
+            });
+            
+            this.setData('exercises', currentExercises);
+            console.log('☁️ 클라우드 사용자 운동이 동기화되었습니다.');
+        } catch (error) {
+            console.error('❌ 클라우드 운동 동기화 실패:', error);
+        }
     }
 }
 

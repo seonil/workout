@@ -229,39 +229,67 @@ body {
 
 /* 반응형 네비게이션 */
 @media (max-width: 768px) {
+    .workout-nav {
+        padding: var(--spacing-2) 0; /* 네비게이션 바 전체 높이 줄임 */
+    }
+    
     .nav-container {
         flex-direction: column;
-        gap: 1rem;
-        padding: var(--spacing-3) var(--spacing-4);
+        gap: 0.5rem; /* 간격 줄임 */
+        padding: var(--spacing-2) var(--spacing-3); /* 패딩 줄임 */
     }
     
     .nav-items {
         order: 2;
-        gap: var(--spacing-3);
+        gap: var(--spacing-2); /* 간격 더 줄임 */
         justify-content: center;
+        flex-wrap: wrap;
     }
     
     .nav-user {
         order: 1;
         align-self: stretch;
         justify-content: center;
+        min-height: auto; /* 사용자 영역 높이 최소화 */
     }
     
-    .user-name-nav {
-        max-width: 200px;
-    }
-    
-    .nav-item {
-        padding: var(--spacing-2) var(--spacing-3);
+    .user-info-nav {
+        padding: var(--spacing-1) var(--spacing-2); /* 사용자 정보 패딩 줄임 */
         font-size: var(--font-size-xs);
     }
     
+    .user-avatar-nav {
+        width: 24px; /* 아바타 크기 줄임 */
+        height: 24px;
+        font-size: var(--font-size-xs);
+    }
+    
+    .user-name-nav {
+        max-width: 150px; /* 이름 표시 폭 줄임 */
+        font-size: var(--font-size-xs);
+    }
+    
+    .nav-item {
+        padding: var(--spacing-1) var(--spacing-2); /* 패딩 더 줄임 */
+        font-size: var(--font-size-xs);
+        border-radius: 15px; /* 라운드 줄임 */
+        min-height: auto; /* 최소 높이 제거 */
+    }
+    
     .nav-icon {
-        font-size: var(--font-size-base);
+        font-size: 14px; /* 아이콘 크기 줄임 */
     }
     
     .nav-label {
         font-size: var(--font-size-xs);
+        font-weight: 500; /* 폰트 두께 줄임 */
+    }
+    
+    .login-btn-nav,
+    .logout-btn-nav {
+        padding: var(--spacing-1) var(--spacing-2); /* 버튼 패딩 줄임 */
+        font-size: var(--font-size-xs);
+        height: 28px; /* 버튼 높이 고정 */
     }
 }
 

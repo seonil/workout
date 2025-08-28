@@ -27,8 +27,14 @@ class AuthComponent {
         const displayName = user.displayName || user.email || '사용자';
         console.log('🎉 사용자 로그인 완료:', displayName);
         
-        // 환영 메시지
-        this.showSuccess(`환영합니다, ${displayName}님! 🎉`);
+        // 새로 로그인한 경우에만 환영 메시지 표시 (페이지 새로고침이나 탭 전환 시엔 표시하지 않음)
+        const isNewLogin = !localStorage.getItem('last-login-time') || 
+                          (Date.now() - parseInt(localStorage.getItem('last-login-time'))) > 30000; // 30초 이상 경과
+        
+        if (isNewLogin) {
+            this.showSuccess(`환영합니다, ${displayName}님! 🎉`);
+            localStorage.setItem('last-login-time', Date.now().toString());
+        }
         
         // 데이터 동기화 시작
         if (this.cloudDataManager) {
