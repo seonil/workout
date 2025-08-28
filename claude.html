@@ -292,6 +292,7 @@
                 <!-- 오늘 운동 기록 복사 버튼 -->
                 <div class="text-center mb-6">
                     <button id="copy-workout" class="btn btn-success">📋 오늘 운동 기록 복사</button>
+                    <button id="delete-all-records" class="btn btn-danger ml-4">🗑️ 모든 운동기록 삭제</button>
                 </div>
                 
                 <hr class="my-8">
@@ -367,6 +368,9 @@
 
             // 운동 기록 복사
             document.getElementById('copy-workout').addEventListener('click', copyTodaysWorkout);
+
+            // 모든 운동 기록 삭제
+            document.getElementById('delete-all-records').addEventListener('click', deleteAllRecords);
         }
 
         function switchTab(tabName) {
@@ -936,6 +940,23 @@
                 }
                 document.body.removeChild(textarea);
             });
+        }
+
+        function deleteAllRecords() {
+            if (confirm('정말로 모든 운동 기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                if (confirm('마지막 확인: 모든 운동 기록과 개인 기록(PR)이 완전히 삭제됩니다. 계속하시겠습니까?')) {
+                    // 모든 운동 기록 삭제
+                    workoutData.setData('workoutHistory', []);
+                    // 개인 기록(PR) 삭제
+                    workoutData.setData('personalRecords', {});
+                    
+                    // UI 업데이트
+                    renderWorkoutHistory();
+                    renderProgressTab();
+                    
+                    alert('모든 운동 기록이 삭제되었습니다.');
+                }
+            }
         }
 
         function restoreState() {
