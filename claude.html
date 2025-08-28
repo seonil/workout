@@ -7,6 +7,13 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏋️</text></svg>">
     <!-- 공통 컴포넌트 로드 -->
     <link rel="stylesheet" href="components/common-styles.css">
+    <link rel="stylesheet" href="components/auth-styles.css">
+    
+    <!-- Firebase SDK -->
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="shared/cloud-data-manager.js"></script>
+    <script type="module" src="components/auth-component.js"></script>
+    
     <script src="shared/data-manager.js"></script>
     <script src="shared/utils.js"></script>
     <script src="components/navigation.js"></script>
@@ -258,17 +265,18 @@
 <body>
     <!-- 네비게이션은 JavaScript로 동적 생성 -->
 
-    <div class="container">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold">운동 KPR 관리 시스템</h1>
-            <p class="text-lg text-secondary mt-2">개인 기록을 추적하고 운동 진도를 관리하세요</p>
-        </div>
-        
-        <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="workout">🏋️ 운동기록</button>
-            <button class="nav-tab" data-tab="progress">📈 진도추적</button>
-            <button class="nav-tab" data-tab="library">📚 라이브러리</button>
-        </div>
+    <div class="container main-container">
+        <div class="app-content" style="display: none;">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold">운동 KPR 관리 시스템</h1>
+                <p class="text-lg text-secondary mt-2">개인 기록을 추적하고 운동 진도를 관리하세요</p>
+            </div>
+            
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="workout">🏋️ 운동기록</button>
+                <button class="nav-tab" data-tab="progress">📈 진도추적</button>
+                <button class="nav-tab" data-tab="library">📚 라이브러리</button>
+            </div>
         
         <div class="content-area">
             <!-- 운동 기록 탭 -->
@@ -319,9 +327,15 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 
     <script>
+        // 전역 변수
+        let cloudDataManager;
+        let authComponent;
+        let workoutData;
+
         // 앱 상태
         const appState = {
             activeTab: 'workout',
@@ -331,18 +345,87 @@
             selectedBodyPart: '하체',
             selectedExercise: '',
             sets: Array.from({ length: 5 }, () => ({ weight: '', reps: '' })),
-            notes: ''
+            notes: '',
+            isAuthenticated: false
         };
 
         // 네비게이션 초기화
         let navigation;
         
-        function initializeApp() {
-            navigation = new WorkoutNavigation();
-            navigation.init();
+        async function initializeApp() {
+            try {
+                // Firebase 및 클라우드 데이터 매니저 초기화
+                const { default: CloudDataManager } = await import('./shared/cloud-data-manager.js');
+                const { default: AuthComponent } = await import('./components/auth-component.js');
+                
+                cloudDataManager = new CloudDataManager();
+                authComponent = new AuthComponent(cloudDataManager);
+                
+                // 로컬 데이터 매니저 초기화
+                workoutData = new WorkoutDataManager();
+                workoutData.setCloudDataManager(cloudDataManager);
+                
+                navigation = new WorkoutNavigation();
+                navigation.init();
+                
+                // 인증 UI 표시
+                showAuthenticationUI();
+                
+            } catch (error) {
+                console.error('Firebase 초기화 실패, 로컬 모드로 실행:', error);
+                // Firebase 없이 로컬 모드로 실행
+                workoutData = new WorkoutDataManager();
+                navigation = new WorkoutNavigation();
+                navigation.init();
+                showMainApp();
+            }
+        }
+        
+        function showAuthenticationUI() {
+            const mainContainer = document.querySelector('.main-container');
+            const authContainer = document.createElement('div');
+            authContainer.id = 'auth-section';
+            authContainer.className = 'auth-section';
+            
+            const authTitle = document.createElement('div');
+            authTitle.className = 'text-center mb-4';
+            authTitle.innerHTML = '<h2>KPR 추적기에 오신 것을 환영합니다</h2><p class="text-muted">클라우드 동기화로 운동 기록을 안전하게 관리하세요</p>';
+            
+            authContainer.appendChild(authTitle);
+            authContainer.appendChild(authComponent.createAuthUI());
+            
+            mainContainer.insertBefore(authContainer, mainContainer.firstChild);
+            
+            // 인증 상태 변화 감지
+            cloudDataManager.auth.onAuthStateChanged((user) => {
+                if (user) {
+                    appState.isAuthenticated = true;
+                    hideAuthenticationUI();
+                    showMainApp();
+                } else {
+                    appState.isAuthenticated = false;
+                }
+            });
+        }
+        
+        function hideAuthenticationUI() {
+            const authSection = document.getElementById('auth-section');
+            if (authSection) {
+                authSection.style.display = 'none';
+            }
+        }
+        
+        function showMainApp() {
+            const appContent = document.querySelector('.app-content');
+            if (appContent) {
+                appContent.style.display = 'block';
+            }
             
             // 이벤트 리스너 설정
             setupEventListeners();
+            
+            // 초기 탭 렌더링
+            switchTab('workout');
             
             // 초기 렌더링
             render();
@@ -963,6 +1046,65 @@
                 }
             });
         });
+        
+        // 운동 기록 저장 시 클라우드 동기화
+        async function saveWorkoutRecord() {
+            const records = getWorkoutRecords();
+            
+            if (records.length === 0) {
+                alert('저장할 운동 기록이 없습니다.');
+                return;
+            }
+            
+            try {
+                // 클라우드 + 로컬 저장
+                const result = await workoutData.addWorkoutRecord(records);
+                
+                if (result.success) {
+                    alert(`${result.recordsAdded}개의 운동 기록이 저장되었습니다.`);
+                    clearWorkoutForm();
+                    renderWorkoutHistory();
+                    renderProgressTab();
+                } else {
+                    alert('운동 기록 저장에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('운동 기록 저장 중 오류:', error);
+                alert('운동 기록 저장 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // 운동 기록 데이터 수집
+        function getWorkoutRecords() {
+            const records = [];
+            const exerciseName = appState.selectedExercise;
+            
+            if (!exerciseName) return records;
+            
+            appState.sets.forEach((set, index) => {
+                if (set.weight && set.reps && set.weight > 0 && set.reps > 0) {
+                    records.push({
+                        id: `${Date.now()}_${index}`,
+                        name: exerciseName,
+                        weight: parseFloat(set.weight),
+                        reps: parseInt(set.reps),
+                        date: new Date().toISOString().split('T')[0],
+                        notes: appState.notes || '',
+                        setNumber: index + 1,
+                        bodyPart: appState.selectedBodyPart
+                    });
+                }
+            });
+            
+            return records;
+        }
+        
+        // 운동 기록 폼 초기화
+        function clearWorkoutForm() {
+            appState.sets = Array.from({ length: 5 }, () => ({ weight: '', reps: '' }));
+            appState.notes = '';
+            renderExerciseForm();
+        }
     </script>
 </body>
 </html>
