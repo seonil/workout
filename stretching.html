@@ -3,68 +3,379 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>통합 가동성 리셋 프로토콜</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>통합 가동성 프로토콜 - 통합 피트니스 앱</title>
+    <!-- 공통 컴포넌트 로드 -->
+    <link rel="stylesheet" href="components/common-styles.css">
+    <script src="shared/data-manager.js"></script>
+    <script src="shared/utils.js"></script>
+    <script src="components/navigation.js"></script>
     <style>
-        body {
-            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+        /* 스트레칭 페이지 전용 스타일 */
+        .stretching-section {
+            background: var(--bg-white);
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin-bottom: var(--spacing-6);
+            transition: all 0.3s ease;
         }
-        details > summary {
-            list-style: none;
+        
+        .stretching-section:hover {
+            box-shadow: var(--shadow-lg);
         }
-        details > summary::-webkit-details-marker {
+        
+        .section-header {
+            padding: var(--spacing-6);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, var(--bg-gray-50) 0%, var(--bg-white) 100%);
+            border-bottom: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+        
+        .section-header:hover {
+            background: linear-gradient(135deg, var(--bg-gray-100) 0%, var(--bg-gray-50) 100%);
+        }
+        
+        .section-header.stage-1 {
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .section-header.stage-2 {
+            border-left: 4px solid #10B981;
+        }
+        
+        .section-header.stage-3 {
+            border-left: 4px solid #EF4444;
+        }
+        
+        .section-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .section-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: var(--spacing-1);
+            opacity: 0.9;
+        }
+        
+        .section-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            transition: transform 0.3s ease;
+            stroke: var(--text-secondary);
+        }
+        
+        .section-content {
+            padding: 0 var(--spacing-6) var(--spacing-6);
             display: none;
         }
-        .progress-bar-fill {
-            transition: width 0.5s ease-in-out;
+        
+        .section-content.expanded {
+            display: block;
+            animation: slideDown 0.3s ease-out;
         }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         .exercise-card {
+            background: var(--bg-white);
+            border: 2px solid var(--border-light);
+            border-radius: 0.75rem;
+            padding: var(--spacing-4);
+            margin-bottom: var(--spacing-4);
             transition: all 0.3s ease;
-            border-left-width: 4px;
+            position: relative;
+            overflow: hidden;
         }
+        
+        .exercise-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
         .exercise-card.completed {
-            border-left-color: #4ade80; /* green-400 */
-            background-color: #f0fdf4; /* green-50 */
+            border-color: #10B981;
+            background: linear-gradient(135deg, #F0FDF4 0%, #FAFAFA 100%);
         }
-        .exercise-card:not(.completed) {
-            border-left-color: #93c5fd; /* blue-300 */
+        
+        .exercise-card.completed::before {
+            content: '✓';
+            position: absolute;
+            top: var(--spacing-2);
+            right: var(--spacing-2);
+            background: #10B981;
+            color: white;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
         }
-        .summary-icon {
-            transition: transform 0.3s ease;
+        
+        .exercise-header {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-4);
         }
-        details[open] .summary-icon {
-            transform: rotate(90deg);
+        
+        .exercise-checkbox {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 0.375rem;
+            border: 2px solid var(--border-medium);
+            cursor: pointer;
+            margin-top: var(--spacing-1);
+            transition: all 0.2s ease;
+        }
+        
+        .exercise-checkbox:checked {
+            background: #10B981;
+            border-color: #10B981;
+        }
+        
+        .exercise-checkbox:hover {
+            border-color: #10B981;
+        }
+        
+        .exercise-details h3 {
+            margin: 0 0 var(--spacing-1) 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .exercise-duration {
+            font-size: 0.875rem;
+            color: #059669;
+            font-weight: 500;
+            background: #ECFDF5;
+            padding: var(--spacing-1) var(--spacing-2);
+            border-radius: 0.375rem;
+            display: inline-block;
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .exercise-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+        
+        .progress-container {
+            position: sticky;
+            top: var(--spacing-4);
+            background: var(--bg-white);
+            border-radius: 1rem;
+            padding: var(--spacing-5);
+            box-shadow: var(--shadow-lg);
+            margin-bottom: var(--spacing-6);
+            border: 2px solid var(--border-light);
+            z-index: 10;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-3);
+        }
+        
+        .progress-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .progress-percentage {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #3B82F6;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            background-color: var(--bg-gray-100);
+            border-radius: 9999px;
+            height: 0.75rem;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3B82F6 0%, #10B981 100%);
+            border-radius: 9999px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .final-section {
+            background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
+            color: white;
+            border-radius: 1.5rem;
+            padding: var(--spacing-8);
+            margin-top: var(--spacing-12);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .final-section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-4);
+            text-align: center;
+        }
+        
+        .timing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-6);
+            margin: var(--spacing-6) 0;
+        }
+        
+        .timing-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: var(--spacing-5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .timing-card h3 {
+            color: #7DD3FC;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-2);
+        }
+        
+        .timing-card p {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        .final-message {
+            text-align: center;
+            font-size: 1.125rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: var(--spacing-6);
+            margin-top: var(--spacing-6);
+        }
+        
+        .reference-section {
+            margin-top: var(--spacing-12);
+        }
+        
+        .reference-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-6);
+        }
+        
+        .reference-grid {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-4);
+        }
+        
+        .reference-link {
+            background: var(--bg-white);
+            padding: var(--spacing-4);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-md);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .reference-link:hover {
+            box-shadow: var(--shadow-xl);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+        
+        .reference-link-title {
+            font-weight: 600;
+            margin-bottom: var(--spacing-1);
+        }
+        
+        .reference-link-subtitle {
+            font-size: 0.875rem;
+            color: #3B82F6;
+        }
+        
+        @media (max-width: 768px) {
+            .progress-container {
+                position: relative;
+                top: auto;
+            }
+            
+            .section-header {
+                padding: var(--spacing-4);
+            }
+            
+            .section-content {
+                padding: 0 var(--spacing-4) var(--spacing-4);
+            }
+            
+            .exercise-card {
+                padding: var(--spacing-3);
+            }
+            
+            .final-section {
+                padding: var(--spacing-6);
+            }
+            
+            .timing-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .reference-grid {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body>
+    <!-- 네비게이션은 JavaScript로 동적 생성 -->
 
-    <!-- 네비게이션 바 -->
-    <nav style="background: #1e293b; padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: -1rem -1rem 2rem -1rem;">
-        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 0 20px;">
-            <a href="claude.html" style="color: #f1f5f9; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(241,245,249,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">🏋️ 운동 관리</a>
-            <a href="index.html" style="color: #f1f5f9; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(241,245,249,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">📊 운동 티어리스트</a>
-            <a href="routine.html" style="color: #f1f5f9; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(241,245,249,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">💪 하이브리드 루틴</a>
-            <a href="stretching.html" style="color: #f1f5f9; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(241,245,249,0.2); font-weight: 600; transition: all 0.3s ease; border: 2px solid rgba(241,245,249,0.3);">🧘 스트레칭</a>
-        </div>
-    </nav>
-
-    <div class="container mx-auto max-w-4xl p-4 sm:p-8">
-        <!-- Header -->
+    <div class="container">
         <header class="text-center mb-8">
-            <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 mb-2">통합 가동성 프로토콜</h1>
-            <p class="text-lg text-slate-600">매일 15~20분 투자로 몸의 균형을 되찾고 최상의 컨디션을 만드세요.</p>
+            <h1 class="text-4xl sm:text-5xl font-bold">통합 가동성 프로토콜</h1>
+            <p class="text-lg text-secondary mt-4">매일 15~20분 투자로 몸의 균형을 되찾고 최상의 컨디션을 만드세요.</p>
         </header>
 
         <!-- Progress Bar -->
-        <div class="mb-8">
-            <div class="flex justify-between mb-1">
-                <span class="text-base font-medium text-blue-700">진행률</span>
-                <span class="text-sm font-medium text-blue-700" id="progress-text">0%</span>
+        <div class="progress-container">
+            <div class="progress-header">
+                <span class="progress-title">진행률</span>
+                <span class="progress-percentage" id="progress-text">0%</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar-fill" style="width: 0%"></div>
             </div>
         </div>
 
@@ -72,222 +383,407 @@
         <div class="space-y-6">
 
             <!-- 1단계: 인지 & 풀어주기 -->
-            <details class="bg-white rounded-xl shadow-md overflow-hidden" open>
-                <summary class="p-6 cursor-pointer flex justify-between items-center">
+            <div class="stretching-section">
+                <div class="section-header stage-1" data-section="stage1">
                     <div>
-                        <h2 class="text-2xl font-bold text-blue-800">1단계: 인지 & 풀어주기 (Awareness & Release)</h2>
-                        <p class="text-slate-500 mt-1">뭉친 근육을 풀고, 올바른 움직임을 뇌에 각인시킵니다. (약 5분)</p>
+                        <h2 class="section-title">1단계: 인지 & 풀어주기 (Awareness & Release)</h2>
+                        <p class="section-subtitle">뭉친 근육을 풀고, 올바른 움직임을 뇌에 각인시킵니다. (약 5분)</p>
                     </div>
-                    <svg class="w-6 h-6 text-blue-800 summary-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </summary>
-                <div class="p-6 border-t border-slate-200 space-y-4">
-                    <!-- Exercise Cards -->
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-blue-600 rounded mt-1 border-gray-300 focus:ring-blue-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">골반 회전 연습 (고양이-낙타 자세 변형)</h3>
-                                <p class="text-sm text-slate-500">15회</p>
-                                <p class="mt-2 text-slate-700">네발 기기 자세에서 골반을 앞뒤(전방/후방 경사)로 움직이는 감각을 익혀 척추 중립을 인지하고, 척추 마디마디를 부드럽게 만듭니다.</p>
+                    <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+                <div class="section-content" id="stage1-content">
+                    <!-- 운동 카드들 -->
+                    <div class="exercise-card" data-exercise="pelvis-rotation">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="pelvis-rotation">
+                            <div class="exercise-details">
+                                <h3>골반 회전 연습 (고양이-낙타 자세 변형)</h3>
+                                <div class="exercise-duration">15회</div>
+                                <p class="exercise-description">네발 기기 자세에서 골반을 앞뒤(전방/후방 경사)로 움직이는 감각을 익혀 척추 중립을 인지하고, 척추 마디마디를 부드럽게 만듭니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-blue-600 rounded mt-1 border-gray-300 focus:ring-blue-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">둔근 (엉덩이) 폼롤링</h3>
-                                <p class="text-sm text-slate-500">양쪽 각 1분</p>
-                                <p class="mt-2 text-slate-700">폼롤러나 마사지볼을 사용해 허리 통증의 주범인 타이트한 엉덩이 근육을 깊숙이 이완시킵니다.</p>
+
+                    <div class="exercise-card" data-exercise="glute-foam-roll">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="glute-foam-roll">
+                            <div class="exercise-details">
+                                <h3>둔근 (엉덩이) 폼롤링</h3>
+                                <div class="exercise-duration">양쪽 각 1분</div>
+                                <p class="exercise-description">폼롤러나 마사지볼을 사용해 허리 통증의 주범인 타이트한 엉덩이 근육을 깊숙이 이완시킵니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-blue-600 rounded mt-1 border-gray-300 focus:ring-blue-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">고관절 굴곡근 폼롤링</h3>
-                                <p class="text-sm text-slate-500">양쪽 각 1분</p>
-                                <p class="mt-2 text-slate-700">골반을 앞으로 당기는 허벅지 앞쪽 근육을 풀어 골반 전방경사를 완화하고 허리의 부담을 줄여줍니다.</p>
+
+                    <div class="exercise-card" data-exercise="hip-flexor-foam-roll">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="hip-flexor-foam-roll">
+                            <div class="exercise-details">
+                                <h3>고관절 굴곡근 폼롤링</h3>
+                                <div class="exercise-duration">양쪽 각 1분</div>
+                                <p class="exercise-description">골반을 앞으로 당기는 허벅지 앞쪽 근육을 풀어 골반 전방경사를 완화하고 허리의 부담을 줄여줍니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                     <div class="exercise-card bg-white p-4 rounded-lg shadow-sm">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-blue-600 rounded mt-1 border-gray-300 focus:ring-blue-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">흉추 (등 상부) 폼롤링</h3>
-                                <p class="text-sm text-slate-500">1분</p>
-                                <p class="mt-2 text-slate-700">뻣뻣하게 굳은 등을 풀어주어 허리가 해야 할 회전 및 움직임 부담을 덜어줍니다.</p>
+
+                    <div class="exercise-card" data-exercise="thoracic-foam-roll">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="thoracic-foam-roll">
+                            <div class="exercise-details">
+                                <h3>흉추 (등 상부) 폼롤링</h3>
+                                <div class="exercise-duration">1분</div>
+                                <p class="exercise-description">뻣뻣하게 굳은 등을 풀어주어 허리가 해야 할 회전 및 움직임 부담을 덜어줍니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
                 </div>
-            </details>
+            </div>
 
             <!-- 2단계: 가동성 확보 -->
-            <details class="bg-white rounded-xl shadow-md overflow-hidden" open>
-                <summary class="p-6 cursor-pointer flex justify-between items-center">
+            <div class="stretching-section">
+                <div class="section-header stage-2" data-section="stage2">
                     <div>
-                        <h2 class="text-2xl font-bold text-green-800">2단계: 가동성 확보 (Mobilize)</h2>
-                        <p class="text-slate-500 mt-1">관절의 움직임을 열어 본연의 가동 범위를 되찾습니다. (약 6분)</p>
+                        <h2 class="section-title">2단계: 가동성 확보 (Mobilize)</h2>
+                        <p class="section-subtitle">관절의 움직임을 열어 본연의 가동 범위를 되찾습니다. (약 6분)</p>
                     </div>
-                     <svg class="w-6 h-6 text-green-800 summary-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </summary>
-                <div class="p-6 border-t border-slate-200 space-y-4">
-                    <!-- Exercise Cards -->
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm" style="border-left-color: #34d399;">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-green-600 rounded mt-1 border-gray-300 focus:ring-green-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">월드 그레이티스트 스트레칭</h3>
-                                <p class="text-sm text-slate-500">양쪽 각 5회</p>
-                                <p class="mt-2 text-slate-700">단 하나의 동작으로 고관절, 햄스트링, 흉추의 가동성을 동시에 향상시키는 최고의 종합 스트레칭입니다.</p>
+                    <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+                <div class="section-content" id="stage2-content">
+                    <div class="exercise-card" data-exercise="world-greatest-stretch">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="world-greatest-stretch">
+                            <div class="exercise-details">
+                                <h3>월드 그레이티스트 스트레칭</h3>
+                                <div class="exercise-duration">양쪽 각 5회</div>
+                                <p class="exercise-description">단 하나의 동작으로 고관절, 햄스트링, 흉추의 가동성을 동시에 향상시키는 최고의 종합 스트레칭입니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm" style="border-left-color: #34d399;">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-green-600 rounded mt-1 border-gray-300 focus:ring-green-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">90/90 스트레칭</h3>
-                                <p class="text-sm text-slate-500">양쪽 각 30초 x 2세트</p>
-                                <p class="mt-2 text-slate-700">고관절의 내회전/외회전 움직임을 모두 개선하여 스쿼트 깊이를 확보하고 엉덩이 바깥쪽 깊은 근육을 스트레칭합니다.</p>
+
+                    <div class="exercise-card" data-exercise="90-90-stretch">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="90-90-stretch">
+                            <div class="exercise-details">
+                                <h3>90/90 스트레칭</h3>
+                                <div class="exercise-duration">양쪽 각 30초 x 2세트</div>
+                                <p class="exercise-description">고관절의 내회전/외회전 움직임을 모두 개선하여 스쿼트 깊이를 확보하고 엉덩이 바깥쪽 깊은 근육을 스트레칭합니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm" style="border-left-color: #34d399;">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-green-600 rounded mt-1 border-gray-300 focus:ring-green-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">개구리 스트레칭</h3>
-                                <p class="text-sm text-slate-500">1분</p>
-                                <p class="mt-2 text-slate-700">허벅지 안쪽(내전근)을 깊게 스트레칭하여 골반의 유연성을 높입니다. 무릎을 최대한 넓게 벌리고 엉덩이를 뒤로 천천히 밀어주세요.</p>
+
+                    <div class="exercise-card" data-exercise="frog-stretch">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="frog-stretch">
+                            <div class="exercise-details">
+                                <h3>개구리 스트레칭</h3>
+                                <div class="exercise-duration">1분</div>
+                                <p class="exercise-description">허벅지 안쪽(내전근)을 깊게 스트레칭하여 골반의 유연성을 높입니다. 무릎을 최대한 넓게 벌리고 엉덩이를 뒤로 천천히 밀어주세요.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
                 </div>
-            </details>
+            </div>
 
             <!-- 3단계: 깨우기 & 안정화 -->
-            <details class="bg-white rounded-xl shadow-md overflow-hidden" open>
-                <summary class="p-6 cursor-pointer flex justify-between items-center">
+            <div class="stretching-section">
+                <div class="section-header stage-3" data-section="stage3">
                     <div>
-                        <h2 class="text-2xl font-bold text-red-800">3단계: 깨우기 & 안정화 (Activate & Stabilize)</h2>
-                        <p class="text-slate-500 mt-1">올바른 근육에 시동을 걸고 척추를 중립으로 잠급니다. (약 5~8분)</p>
+                        <h2 class="section-title">3단계: 깨우기 & 안정화 (Activate & Stabilize)</h2>
+                        <p class="section-subtitle">올바른 근육에 시동을 걸고 척추를 중립으로 잠급니다. (약 5~8분)</p>
                     </div>
-                    <svg class="w-6 h-6 text-red-800 summary-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </summary>
-                <div class="p-6 border-t border-slate-200 space-y-4">
-                    <!-- Exercise Cards -->
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm" style="border-left-color: #f87171;">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-red-600 rounded mt-1 border-gray-300 focus:ring-red-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">글루트 브릿지</h3>
-                                <p class="text-sm text-slate-500">15회 x 2세트</p>
-                                <p class="mt-2 text-slate-700">허리가 아닌 엉덩이 힘으로만 골반을 드는 감각을 익힙니다. '벨트 버클을 얼굴 쪽으로 당긴다'는 느낌으로 엉덩이를 강하게 수축하세요.</p>
+                    <svg class="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+                <div class="section-content" id="stage3-content">
+                    <div class="exercise-card" data-exercise="glute-bridge">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="glute-bridge">
+                            <div class="exercise-details">
+                                <h3>글루트 브릿지</h3>
+                                <div class="exercise-duration">15회 x 2세트</div>
+                                <p class="exercise-description">허리가 아닌 엉덩이 힘으로만 골반을 드는 감각을 익힙니다. '벨트 버클을 얼굴 쪽으로 당긴다'는 느낌으로 엉덩이를 강하게 수축하세요.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                     <div class="exercise-card bg-white p-4 rounded-lg shadow-sm" style="border-left-color: #f87171;">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-red-600 rounded mt-1 border-gray-300 focus:ring-red-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">클램쉘</h3>
-                                <p class="text-sm text-slate-500">양쪽 15회 x 2세트</p>
-                                <p class="mt-2 text-slate-700">옆으로 누워 발뒤꿈치를 붙인 채 위쪽 무릎만 열어주며 엉덩이 옆(중둔근)을 활성화합니다. 골반이 뒤로 넘어가지 않게 주의하세요.</p>
+
+                    <div class="exercise-card" data-exercise="clamshell">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="clamshell">
+                            <div class="exercise-details">
+                                <h3>클램쉘</h3>
+                                <div class="exercise-duration">양쪽 15회 x 2세트</div>
+                                <p class="exercise-description">옆으로 누워 발뒤꿈치를 붙인 채 위쪽 무릎만 열어주며 엉덩이 옆(중둔근)을 활성화합니다. 골반이 뒤로 넘어가지 않게 주의하세요.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm" style="border-left-color: #f87171;">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-red-600 rounded mt-1 border-gray-300 focus:ring-red-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">버드 독 (McGill Big 3)</h3>
-                                <p class="text-sm text-slate-500">양쪽 각 10회 (천천히)</p>
-                                <p class="mt-2 text-slate-700">허리가 절대 흔들리지 않도록 복근과 엉덩이에 힘을 꽉 주고, 팔다리를 천천히 움직입니다. 척추 안정성의 핵심입니다.</p>
+
+                    <div class="exercise-card" data-exercise="bird-dog">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="bird-dog">
+                            <div class="exercise-details">
+                                <h3>버드 독 (McGill Big 3)</h3>
+                                <div class="exercise-duration">양쪽 각 10회 (천천히)</div>
+                                <p class="exercise-description">허리가 절대 흔들리지 않도록 복근과 엉덩이에 힘을 꽉 주고, 팔다리를 천천히 움직입니다. 척추 안정성의 핵심입니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
-                    <div class="exercise-card bg-white p-4 rounded-lg shadow-sm" style="border-left-color: #f87171;">
-                        <label class="flex items-start space-x-4">
-                            <input type="checkbox" class="form-checkbox h-6 w-6 text-red-600 rounded mt-1 border-gray-300 focus:ring-red-500 exercise-checkbox">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold">사이드 플랭크 (McGill Big 3)</h3>
-                                <p class="text-sm text-slate-500">양쪽 각 20-30초</p>
-                                <p class="mt-2 text-slate-700">옆구리 코어를 강화하여 척추의 측면 안정성을 높입니다. 몸이 일직선이 되도록 유지하는 것이 중요합니다.</p>
+
+                    <div class="exercise-card" data-exercise="side-plank">
+                        <div class="exercise-header">
+                            <input type="checkbox" class="exercise-checkbox" id="side-plank">
+                            <div class="exercise-details">
+                                <h3>사이드 플랭크 (McGill Big 3)</h3>
+                                <div class="exercise-duration">양쪽 각 20-30초</div>
+                                <p class="exercise-description">옆구리 코어를 강화하여 척추의 측면 안정성을 높입니다. 몸이 일직선이 되도록 유지하는 것이 중요합니다.</p>
                             </div>
-                        </label>
+                        </div>
                     </div>
                 </div>
-            </details>
+            </div>
         </div>
 
         <!-- Final Briefing -->
-        <section class="mt-12 bg-slate-800 text-white rounded-xl shadow-lg p-8">
-            <h2 class="text-3xl font-bold mb-4">최종 브리핑: 이 루틴을 언제, 어떻게 활용할까?</h2>
-            <div class="space-y-4">
-                <div>
-                    <h3 class="text-xl font-semibold text-cyan-300">매일 아침 (Best)</h3>
-                    <p class="text-slate-300">잠자는 동안 굳어있던 몸을 깨우고, 하루를 완벽한 자세로 시작하게 하는 최고의 '리셋 버튼'입니다.</p>
+        <div class="final-section">
+            <h2>최종 브리핑: 이 루틴을 언제, 어떻게 활용할까?</h2>
+            <div class="timing-grid">
+                <div class="timing-card">
+                    <h3>매일 아침 (Best)</h3>
+                    <p>잠자는 동안 굳어있던 몸을 깨우고, 하루를 완벽한 자세로 시작하게 하는 최고의 '리셋 버튼'입니다.</p>
                 </div>
-                <div>
-                    <h3 class="text-xl font-semibold text-cyan-300">운동 전 (Good)</h3>
-                    <p class="text-slate-300">특히 하체나 등 운동 전에 수행하면, 부상을 예방하고 운동 퍼포먼스를 극대화하는 '최고의 웜업'이 될 것입니다.</p>
+                <div class="timing-card">
+                    <h3>운동 전 (Good)</h3>
+                    <p>특히 하체나 등 운동 전에 수행하면, 부상을 예방하고 운동 퍼포먼스를 극대화하는 '최고의 웜업'이 될 것입니다.</p>
                 </div>
             </div>
-            <p class="mt-6 text-slate-200 border-t border-slate-600 pt-4">이 15분은 단순한 스트레칭이 아닙니다. 당신의 모든 움직임을 위한 가장 단단한 '기반'을 다지는 가장 중요한 훈련 시간입니다. 오늘부터 바로 시작해 보세요!</p>
-        </section>
+            <div class="final-message">
+                이 15분은 단순한 스트레칭이 아닙니다. 당신의 모든 움직임을 위한 가장 단단한 '기반'을 다지는 가장 중요한 훈련 시간입니다. 오늘부터 바로 시작해 보세요!
+            </div>
+        </div>
         
         <!-- Reference Videos -->
-        <section class="mt-12">
-             <h2 class="text-2xl font-bold text-center mb-6">참고 영상</h2>
-             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                 <a href="http://www.youtube.com/watch?v=ARGmMR_-bHw" target="_blank" class="bg-white p-4 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
-                     <p class="font-semibold">허리 안정성 & 맥길 빅 3</p>
-                     <p class="text-sm text-blue-600 hover:underline">영상 보러가기</p>
-                 </a>
-                 <a href="http://www.youtube.com/watch?v=PvIhCUOsZSM" target="_blank" class="bg-white p-4 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
-                     <p class="font-semibold">자세 교정 & 코어 활성화</p>
-                     <p class="text-sm text-blue-600 hover:underline">영상 보러가기</p>
-                 </a>
-             </div>
-        </section>
-
+        <div class="reference-section">
+            <h2 class="reference-title">참고 영상</h2>
+            <div class="reference-grid">
+                <a href="http://www.youtube.com/watch?v=ARGmMR_-bHw" target="_blank" class="reference-link">
+                    <div class="reference-link-title">허리 안정성 & 맥길 빅 3</div>
+                    <div class="reference-link-subtitle">영상 보러가기 →</div>
+                </a>
+                <a href="http://www.youtube.com/watch?v=PvIhCUOsZSM" target="_blank" class="reference-link">
+                    <div class="reference-link-title">자세 교정 & 코어 활성화</div>
+                    <div class="reference-link-subtitle">영상 보러가기 →</div>
+                </a>
+            </div>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const checkboxes = document.querySelectorAll('.exercise-checkbox');
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            const totalExercises = checkboxes.length;
+        // 앱 상태
+        const appState = {
+            completedExercises: new Set(),
+            openSections: new Set(['stage1']) // 기본적으로 1단계는 열린 상태
+        };
 
-            function updateProgress() {
-                const checkedExercises = document.querySelectorAll('.exercise-checkbox:checked').length;
-                const percentage = totalExercises > 0 ? Math.round((checkedExercises / totalExercises) * 100) : 0;
-                
-                progressBar.style.width = percentage + '%';
-                progressText.textContent = percentage + '%';
+        // 네비게이션 초기화
+        let navigation;
+        
+        function initializeApp() {
+            navigation = new WorkoutNavigation();
+            navigation.init();
+            
+            setupEventListeners();
+            restoreProgress();
+            updateProgress();
+            updateSectionStates();
+        }
 
-                checkboxes.forEach(checkbox => {
-                    const card = checkbox.closest('.exercise-card');
-                    if (checkbox.checked) {
-                        card.classList.add('completed');
-                    } else {
-                        card.classList.remove('completed');
-                    }
-                });
-            }
-
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateProgress);
+        function setupEventListeners() {
+            // 섹션 헤더 클릭 이벤트
+            document.querySelectorAll('.section-header').forEach(header => {
+                header.addEventListener('click', handleSectionToggle);
             });
 
-            // Initialize progress on load
+            // 체크박스 변경 이벤트
+            document.querySelectorAll('.exercise-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', handleExerciseComplete);
+            });
+        }
+
+        function handleSectionToggle(event) {
+            const header = event.currentTarget;
+            const sectionId = header.dataset.section;
+            const content = document.getElementById(`${sectionId}-content`);
+            const icon = header.querySelector('.section-icon');
+            
+            if (appState.openSections.has(sectionId)) {
+                // 섹션 닫기
+                appState.openSections.delete(sectionId);
+                content.classList.remove('expanded');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                // 섹션 열기
+                appState.openSections.add(sectionId);
+                content.classList.add('expanded');
+                icon.style.transform = 'rotate(90deg)';
+            }
+            
+            saveProgress();
+        }
+
+        function handleExerciseComplete(event) {
+            const checkbox = event.target;
+            const exerciseId = checkbox.id;
+            const exerciseCard = checkbox.closest('.exercise-card');
+            
+            if (checkbox.checked) {
+                appState.completedExercises.add(exerciseId);
+                exerciseCard.classList.add('completed');
+                
+                // 스트레칭 진행률을 데이터매니저에 저장
+                workoutData.updateStretchingProgress(exerciseId, true);
+            } else {
+                appState.completedExercises.delete(exerciseId);
+                exerciseCard.classList.remove('completed');
+                
+                workoutData.updateStretchingProgress(exerciseId, false);
+            }
+            
             updateProgress();
+            saveProgress();
+        }
+
+        function updateProgress() {
+            const totalExercises = document.querySelectorAll('.exercise-checkbox').length;
+            const completedExercises = appState.completedExercises.size;
+            const percentage = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+            
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = percentage + '%';
+            
+            // 프로그레스 바 색상 변경
+            if (percentage === 100) {
+                progressBar.style.background = 'linear-gradient(90deg, #10B981 0%, #059669 100%)';
+                
+                // 완료 축하 애니메이션 (선택사항)
+                if (completedExercises === totalExercises) {
+                    showCompletionMessage();
+                }
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #3B82F6 0%, #10B981 100%)';
+            }
+        }
+
+        function showCompletionMessage() {
+            // 간단한 완료 메시지 표시
+            const message = document.createElement('div');
+            message.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+                color: white;
+                padding: 2rem;
+                border-radius: 1rem;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                text-align: center;
+                font-size: 1.25rem;
+                font-weight: 600;
+                animation: fadeIn 0.5s ease;
+            `;
+            message.innerHTML = '🎉 모든 운동을 완료했습니다!<br><small style="font-weight: 400; font-size: 1rem;">훌륭한 시작입니다!</small>';
+            
+            document.body.appendChild(message);
+            
+            // 3초 후 메시지 제거
+            setTimeout(() => {
+                message.style.animation = 'fadeOut 0.5s ease';
+                setTimeout(() => message.remove(), 500);
+            }, 3000);
+        }
+
+        function updateSectionStates() {
+            document.querySelectorAll('.section-header').forEach(header => {
+                const sectionId = header.dataset.section;
+                const content = document.getElementById(`${sectionId}-content`);
+                const icon = header.querySelector('.section-icon');
+                
+                if (appState.openSections.has(sectionId)) {
+                    content.classList.add('expanded');
+                    icon.style.transform = 'rotate(90deg)';
+                } else {
+                    content.classList.remove('expanded');
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+
+        function saveProgress() {
+            // 로컬 스토리지에 상태 저장
+            const progressData = {
+                completedExercises: Array.from(appState.completedExercises),
+                openSections: Array.from(appState.openSections),
+                lastUpdated: new Date().toISOString()
+            };
+            
+            WorkoutUtils.storage.safeSet('stretching-progress', progressData);
+        }
+
+        function restoreProgress() {
+            // 오늘의 진행률 복원
+            const todayProgress = workoutData.getStretchingProgress();
+            
+            Object.entries(todayProgress).forEach(([exerciseId, completed]) => {
+                if (completed) {
+                    const checkbox = document.getElementById(exerciseId);
+                    const exerciseCard = checkbox?.closest('.exercise-card');
+                    
+                    if (checkbox && exerciseCard) {
+                        checkbox.checked = true;
+                        exerciseCard.classList.add('completed');
+                        appState.completedExercises.add(exerciseId);
+                    }
+                }
+            });
+
+            // 섹션 상태 복원
+            const savedProgress = WorkoutUtils.storage.safeGet('stretching-progress');
+            if (savedProgress && savedProgress.openSections) {
+                appState.openSections = new Set(savedProgress.openSections);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            
+            // 데이터 변경 감지
+            workoutData.onDataChange((event) => {
+                console.log('Stretching data changed:', event.detail);
+            });
         });
+
+        // CSS 애니메이션 추가
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+                to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                to { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

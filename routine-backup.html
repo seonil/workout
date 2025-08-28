@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하이브리드 애슬리트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #F8F7F2; /* 아이보리 배경 */
+            --bg-card: #FFFFFF;
+            --border-color: #E5E7EB;
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --accent-blue: #3B82F6;
+            --accent-blue-dark: #1D4ED8;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-primary);
+        }
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid transparent;
+        }
+        .btn-primary { background-color: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+        .btn-primary:hover { background-color: #2563EB; }
+        .btn-secondary { background-color: #F3F4F6; color: var(--text-secondary); border-color: var(--border-color); }
+        .btn-secondary:hover { background-color: #E5E7EB; }
+        .btn-selected {
+            background-color: var(--accent-blue-dark);
+            color: white;
+            border-color: var(--accent-blue-dark);
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .section-title svg {
+            margin-right: 0.75rem;
+            color: var(--accent-blue);
+        }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .details-btn {
+            cursor: pointer;
+            color: var(--accent-blue);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .details-btn:hover { text-decoration: underline; }
+        .recommendation-card {
+            background-color: #EFF6FF;
+            border: 2px dashed var(--accent-blue);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+    <!-- 네비게이션 바 -->
+    <nav style="background: var(--accent-blue); padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: -1rem -1.5rem 2rem -1.5rem;">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 0 20px;">
+            <a href="claude.html" style="color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(255,255,255,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">🏋️ 운동 관리</a>
+            <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(255,255,255,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">📊 운동 티어리스트</a>
+            <a href="routine.html" style="color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(255,255,255,0.2); font-weight: 600; transition: all 0.3s ease; border: 2px solid rgba(255,255,255,0.3);">💪 하이브리드 루틴</a>
+            <a href="stretching.html" style="color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(255,255,255,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">🧘 스트레칭</a>
+        </div>
+    </nav>
+    
+    <div class="max-w-5xl mx-auto space-y-8">
+        <header class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">하이브리드 애슬리트</h1>
+        </header>
+
+        <!-- 1. 주간 훈련 계획 수립 -->
+        <div class="card">
+            <h2 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                주간 웨이트 훈련 계획 수립
+            </h2>
+            <p class="mb-6 text-gray-600">이번 주에 가능한 **웨이트 트레이닝** 횟수를 선택하면, 가장 이상적인 주간 계획을 제안해 드립니다.</p>
+            <div id="days-selector" class="flex flex-wrap justify-center gap-3 mb-6">
+                <!-- JS로 버튼 생성 -->
+            </div>
+            <div id="plan-display" class="mt-4 p-6 bg-gray-50 rounded-lg min-h-[200px] hidden">
+                 <!-- 계획이 여기에 표시됩니다 -->
+            </div>
+        </div>
+
+        <!-- 2. 동적 훈련 스케줄러 -->
+        <div class="card">
+            <h2 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                동적 훈련 스케줄러: "오늘 뭐하지?"
+            </h2>
+            <p class="mb-6 text-gray-600">계획이 틀어졌나요? 마지막 운동과 휴식 기간을 알려주시면, 지금 가장 필요한 훈련을 추천해 드립니다.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div>
+                    <label for="last-workout" class="block font-medium mb-2 text-gray-700">마지막 웨이트 운동</label>
+                    <select id="last-workout" class="w-full p-2 border border-gray-300 rounded-lg">
+                        <option value="NONE">최근 운동 없음</option>
+                        <option value="PUSH">PUSH (가슴/어깨)</option>
+                        <option value="PULL">PULL (등)</option>
+                        <option value="LEGS">LEGS (하체)</option>
+                        <option value="UPPER">상체</option>
+                        <option value="FULL_BODY">전신</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rest-days" class="block font-medium mb-2 text-gray-700">총 휴식일</label>
+                    <input type="number" id="rest-days" value="1" min="0" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <button id="recommend-btn" class="btn btn-primary w-full">오늘 운동 추천받기</button>
+            </div>
+            <div id="recommendation-display" class="mt-8 hidden">
+                <!-- 추천 운동이 여기에 표시됩니다 -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const exerciseDatabase = {
+            'PUSH': { desc: '가슴/어깨/삼두', exercises: ["바벨 벤치 프레스 (Strength)", "시티드 오버헤드 프레스 (Strength)", "머신 벤치 프레스 (Hypertrophy)", "인클라인 덤벨 프레스 (Hypertrophy)", "중량 딥스 (Strength)"] },
+            'PULL': { desc: '등/이두', exercises: ["중량 풀업/친업 (Strength)", "체스트 서포티드 로우 (Hypertrophy)", "바벨 벤트오버 로우 (Strength)", "랫 풀다운 (Hypertrophy)", "인클라인 덤벨 컬 (Hypertrophy)"] },
+            'LEGS': { desc: '하체', exercises: ["바벨 백 스쿼트 (Strength)", "루마니안 데드리프트 (RDL) (Strength)", "핵 스쿼트 (Hypertrophy)", "레그 프레스 (Hypertrophy)", "시티드 레그 컬 (Hypertrophy)"] },
+            'UPPER': { desc: '상체', exercises: ["머신 벤치 프레스", "랫 풀다운", "시티드 오버헤드 프레스", "덤벨/케이블 래터럴 레이즈", "바벨/EZ-바 컬"] },
+            'FULL_BODY': { desc: '전신', exercises: ["바벨 백 스쿼트", "벤치프레스 변형", "로우 변형"] }
+        };
+
+        const weeklyPlans = {
+            6: { title: "주 6일: The Gold Standard", plan: [
+                { day: 1, weight: "PUSH (Strength)", run: "기초체력 런" }, { day: 2, weight: "PULL (Strength)", run: "회복 런" }, { day: 3, weight: "LEGS (Strength)", run: "휴식" },
+                { day: 4, weight: "PUSH (Hypertrophy)", run: "기초체력 런" }, { day: 5, weight: "PULL (Hypertrophy)", run: "회복 런" }, { day: 6, weight: "LEGS (Hypertrophy)", run: "LSD 런" }
+            ]},
+            5: { title: "주 5일: The Efficiency Model", plan: [
+                { day: 1, weight: "PUSH", run: "템포/인터벌 런" }, { day: 2, weight: "PULL", run: "회복 런" }, { day: 3, weight: "LEGS", run: "휴식" },
+                { day: 4, weight: "상체 근비대", run: "기초체력 런" }, { day: 5, weight: "하체 근비대", run: "LSD 런" }
+            ]},
+            4: { title: "주 4일: The Core Four", plan: [
+                { day: 1, weight: "PUSH", run: "템포/인터벌 런" }, { day: 2, weight: "PULL", run: "회복 런" },
+                { day: 3, weight: "LEGS", run: "휴식" }, { day: 4, weight: "전신 보조", run: "LSD 런" }
+            ]},
+            3: { title: "주 3일: The Holy Trinity", plan: [
+                { day: 1, weight: "PUSH", run: "기초체력 런" }, { day: 2, weight: "PULL", run: "기초체력 런" }, { day: 3, weight: "LEGS", run: "LSD 런" }
+            ]},
+            2: { title: "주 2일: The Split", plan: [
+                { day: 1, weight: "상체", run: "기초체력 런" }, { day: 2, weight: "하체", run: "LSD 런" }
+            ]},
+            1: { title: "주 1일: The Survival Session", plan: [
+                { day: 1, weight: "전신", run: "LSD 또는 기초체력 런" }
+            ]}
+        };
+
+        // DOM Elements
+        const daysSelector = document.getElementById('days-selector');
+        const planDisplay = document.getElementById('plan-display');
+        const recommendBtn = document.getElementById('recommend-btn');
+        const recommendationDisplay = document.getElementById('recommendation-display');
+
+        function initialize() {
+            for (let i = 6; i >= 1; i--) {
+                const button = document.createElement('button');
+                button.className = 'btn btn-secondary';
+                button.textContent = `주 ${i}일`;
+                button.dataset.days = i;
+                daysSelector.appendChild(button);
+            }
+            daysSelector.addEventListener('click', handleFrequencySelect);
+            recommendBtn.addEventListener('click', handleRecommendation);
+        }
+
+        function handleFrequencySelect(e) {
+            if (e.target.tagName !== 'BUTTON') return;
+            const selectedDays = e.target.dataset.days;
+            
+            document.querySelectorAll('#days-selector button').forEach(btn => btn.classList.remove('btn-selected'));
+            e.target.classList.add('btn-selected');
+
+            const planData = weeklyPlans[selectedDays];
+            let planHtml = `<div class="fade-in">`;
+            planHtml += `<h3 class="text-xl font-bold text-center mb-4">${planData.title}</h3>`;
+            planData.plan.forEach(item => {
+                const workoutType = item.weight.split(" ")[0];
+                planHtml += `
+                    <div class="p-3 bg-gray-100 rounded-md mb-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-gray-800">훈련 ${item.day}: ${item.weight}</p>
+                                <p class="text-sm text-gray-600">🏃 추천 러닝: ${item.run}</p>
+                            </div>
+                            <button class="details-btn" onclick="toggleDetails(this, '${workoutType}')">추천 운동 보기</button>
+                        </div>
+                        <div class="details-content hidden mt-2 pt-2 border-t border-gray-200"></div>
+                    </div>
+                `;
+            });
+            planHtml += `</div>`;
+            planDisplay.innerHTML = planHtml;
+            planDisplay.classList.remove('hidden');
+        }
+        
+        window.toggleDetails = (button, workoutType) => {
+            const contentDiv = button.parentElement.nextElementSibling;
+            const workoutKey = workoutType.toUpperCase();
+            
+            if (contentDiv.classList.contains('hidden')) {
+                const data = exerciseDatabase[workoutKey];
+                if (data) {
+                    let detailsHtml = `<p class="font-semibold mb-2">${data.desc} S/A급 추천 운동</p><ul class="list-disc list-inside text-gray-600">`;
+                    data.exercises.forEach(ex => {
+                        detailsHtml += `<li>${ex}</li>`;
+                    });
+                    detailsHtml += `</ul>`;
+                    contentDiv.innerHTML = detailsHtml;
+                } else {
+                    contentDiv.innerHTML = `<p class="text-gray-500">추천 운동 정보가 없습니다.</p>`;
+                }
+                contentDiv.classList.remove('hidden');
+                button.textContent = "숨기기";
+            } else {
+                contentDiv.classList.add('hidden');
+                button.textContent = "추천 운동 보기";
+            }
+        };
+
+        function handleRecommendation() {
+            const lastWorkout = document.getElementById('last-workout').value;
+            const restDays = parseInt(document.getElementById('rest-days').value, 10);
+            
+            let recommendation, reason;
+            const coreWorkouts = ['PUSH', 'PULL', 'LEGS'];
+            
+            if (restDays >= 3) {
+                recommendation = 'FULL_BODY';
+                reason = `<strong>${restDays}일</strong>의 긴 휴식 후에는 전신을 활성화시키는 것이 가장 효과적입니다.`;
+            } else if (lastWorkout === 'NONE') {
+                recommendation = 'LEGS';
+                reason = `훈련을 새로 시작할 때는 가장 큰 근육군인 <strong>하체</strong>부터 시작하는 것이 좋습니다.`;
+            } else if (lastWorkout === 'PUSH') {
+                recommendation = 'PULL';
+                reason = `마지막 <strong>PUSH</strong> 훈련 후에는 길항근인 <strong>PULL(등)</strong> 훈련으로 균형을 맞추는 것이 이상적입니다.`;
+            } else if (lastWorkout === 'PULL') {
+                recommendation = 'LEGS';
+                reason = `마지막 <strong>PULL</strong> 훈련 후에는 아직 자극받지 않은 <strong>하체</strong>를 훈련하여 전신을 순환시키는 것을 추천합니다.`;
+            } else if (lastWorkout === 'LEGS') {
+                recommendation = 'PUSH';
+                reason = `<strong>하체</strong> 훈련으로 인한 피로도를 고려하여, 상체 <strong>PUSH</strong> 운동으로 전환하는 것이 좋습니다.`;
+            } else {
+                // 상체 또는 전신 후에는 가장 오래 쉰 부위
+                recommendation = 'LEGS';
+                reason = `상체/전신 훈련 후에는 가장 큰 근육군인 <strong>하체</strong>를 다시 시작하는 것을 추천합니다.`;
+            }
+
+            const data = exerciseDatabase[recommendation];
+            let recHtml = `
+                <div class="recommendation-card fade-in">
+                    <p class="font-bold text-sm text-blue-700 mb-2">오늘의 최적 훈련 제안</p>
+                    <h3 class="text-4xl font-bold text-gray-900 mb-4">${recommendation} <span class="text-lg font-medium text-gray-700">(${data.desc})</span></h3>
+                    <p class="text-blue-800 mb-6">${reason}</p>
+                    <div class="bg-white bg-opacity-80 p-4 rounded-lg text-left text-gray-800">
+                        <p class="font-bold mb-2 text-lg">추천 운동 목록</p>
+                        <ul class="list-disc list-inside">
+                            ${data.exercises.map(ex => `<li>${ex}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            recommendationDisplay.innerHTML = recHtml;
+            recommendationDisplay.classList.remove('hidden');
+        }
+
+        initialize();
+    </script>
+</body>
+</html>

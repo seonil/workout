@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>운동 티어 리스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A tabbed, dashboard-style Single Page Application (SPA). The main navigation allows users to select a muscle group. The content area dynamically updates, showing an introduction, a summary chart of exercise tiers, and a filterable grid of exercise 'cards'. Users can filter exercises by their primary goal (Strength vs. Hypertrophy). Clicking a card opens a modal with detailed scientific rationale. This structure was chosen to transform the dense, linear report into an interactive, exploratory tool, allowing users to quickly find goal-specific information without being overwhelmed by text, thus enhancing usability and information retention. -->
+    <!-- Visualization & Content Choices: Report Info: Exercise tier tables -> Goal: Organize & Compare -> Viz/Presentation: Interactive, filterable cards and a summary bar chart. Interaction: Users click navigation tabs to switch muscle groups and toggle filters ('Strength'/'Hypertrophy') to update the card grid. Clicking a card reveals detailed text in a modal. Justification: This method breaks down complex tables into digestible, interactive components. The bar chart provides a quick quantitative overview of top-tier exercises per muscle group. The filters directly address the report's core theme of goal-specific training (Specificity of Adaptation). The modal provides deep-dive information on demand without cluttering the main interface. Library/Method: Chart.js for the canvas-based bar chart. Vanilla JS for all DOM manipulation, filtering, and interaction logic. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F8F7F4;
+            color: #333333;
+        }
+        .tier-s { background-color: #FFD700; color: #333; }
+        .tier-a { background-color: #4A90E2; color: white; }
+        .tier-b { background-color: #50E3C2; color: #333; }
+        .tier-c { background-color: #B8B8B8; color: #333; }
+        .tier-f { background-color: #D0021B; color: white; }
+        .nav-btn.active {
+            background-color: #333333;
+            color: #F8F7F4;
+        }
+        .filter-btn.active {
+            background-color: #4A90E2;
+            color: white;
+            border-color: #4A90E2;
+        }
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- 네비게이션 바 -->
+    <nav style="background: #333333; padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 0 20px;">
+            <a href="claude.html" style="color: #F8F7F4; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(248,247,244,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">🏋️ 운동 관리</a>
+            <a href="index.html" style="color: #F8F7F4; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(248,247,244,0.2); font-weight: 600; transition: all 0.3s ease; border: 2px solid rgba(248,247,244,0.3);">📊 운동 티어리스트</a>
+            <a href="routine.html" style="color: #F8F7F4; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(248,247,244,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">💪 하이브리드 루틴</a>
+            <a href="stretching.html" style="color: #F8F7F4; text-decoration: none; padding: 10px 20px; border-radius: 25px; background: rgba(248,247,244,0.1); font-weight: 600; transition: all 0.3s ease; border: 2px solid transparent;">🧘 스트레칭</a>
+        </div>
+    </nav>
+
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">스트렝스와 근비대를 위한 최고의 운동 티어 리스트</h1>
+        </header>
+
+        <nav id="muscle-group-nav" class="flex flex-wrap justify-center gap-2 mb-8">
+        </nav>
+
+        <main id="main-content">
+        </main>
+    </div>
+
+    <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 opacity-0 pointer-events-none modal">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 transform scale-95 modal-content">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 id="modal-title" class="text-2xl md:text-3xl font-bold text-gray-800"></h2>
+                    <p id="modal-target" class="text-md text-gray-500 mt-1"></p>
+                </div>
+                <button id="modal-close-btn" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            </div>
+            <div id="modal-body" class="space-y-6 text-gray-700 leading-relaxed">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const exerciseData = {
+            '하체': {
+                intro: "하체 근육은 신체의 가장 큰 근육 그룹으로, 스트렝스의 기초를 이룹니다. 이 섹션에서는 대퇴사두근, 햄스트링, 둔근의 균형 잡힌 발달을 위한 최적의 운동을 탐구합니다. 특히, 목표에 따라 프리웨이트와 머신 운동을 어떻게 전략적으로 선택해야 하는지(적응의 특수성)에 초점을 맞춥니다.",
+                keyInsight: {
+                    title: "핵심 인사이트: 적응의 특수성",
+                    content: "많은 운동이 근력과 근육 크기를 동시에 발달시키지만, 최적의 선택은 목표에 따라 달라집니다. 최대 스트렝스를 위해서는 신경학적 요구가 높은 바벨 스쿼트와 같은 프리웨이트 운동이 우월합니다. 반면, 최대 근비대를 위해서는 안정성이 확보되어 목표 근육에 더 집중할 수 있는 핵 스쿼트나 레그 프레스 같은 머신 운동이 종종 더 효과적입니다. '최고의' 운동은 당신의 목표에 따라 결정됩니다."
+                },
+                exercises: [
+                    { name: '바벨 백 스쿼트', tier: 'S', target: '대퇴사두근, 둔근, 내전근', strength: '전신 스트렝스, 중추신경계 적응, 기능적 전이 효과에서 타의 추종을 불허함. 하체 스트렝스의 표준.', hypertrophy: '높은 중량 잠재력과 기계적 장력으로 인해 훌륭한 전반적인 매스 빌더.', supporters: 'Stronger By Science, ATHLEAN-X', goal: 'strength' },
+                    { name: '핵 스쿼트 / 펜듈럼 스쿼트', tier: 'S', target: '대퇴사두근', strength: '고정된 경로로 높은 중량을 다룰 수 있어 바벨 스쿼트보다 기술적 요구가 적으면서 스트렝스 발달에 좋음.', hypertrophy: '뛰어난 안정성으로 대퇴사두근 수축에 집중하고 진정한 근육 실패 지점까지 세트를 수행할 수 있게 함. 훌륭한 저항 프로파일.', supporters: 'Jeff Nippard', goal: 'hypertrophy' },
+                    { name: '루마니안 데드리프트 (RDL)', tier: 'S', target: '햄스트링, 둔근', strength: '강력한 고관절 신전 스트렝스와 후면 사슬 안정성을 구축함.', hypertrophy: '햄스트링과 둔근을 상당한 부하가 걸린 신장 상태에 놓이게 하여 근비대의 핵심 동인을 자극함.', supporters: 'Jeff Nippard, Stronger By Science', goal: 'both' },
+                    { name: '레그 프레스', tier: 'A', target: '대퇴사두근, 둔근', strength: '극도로 무거운 중량을 다룰 수 있게 하여 안정적인 환경에서 점진적 과부하에 탁월함.', hypertrophy: '높은 안정성과 부하 능력으로 최고의 매스 빌더 중 하나. 스쿼트보다 전신 피로도가 낮음.', supporters: '다수 연구', goal: 'hypertrophy' },
+                    { name: '불가리안 스플릿 스쿼트', tier: 'A', target: '대퇴사두근, 둔근', strength: '한쪽 다리의 스트렝스와 안정성을 구축하여 근육 불균형을 해소함.', hypertrophy: '운동하는 다리의 대퇴사두근과 둔근에 깊은 스트레칭을 제공함. 높은 대사 스트레스.', supporters: 'Jeff Nippard', goal: 'both' },
+                    { name: '시티드 레그 컬', tier: 'A', target: '햄스트링', strength: '해당 없음 (고립 운동)', hypertrophy: '연구에 따르면 고관절 굴곡 상태에서 근육을 더 길게 훈련시키기 때문에 라잉 레그 컬보다 햄스트링 성장에 우월함.', supporters: 'Jeff Nippard', goal: 'hypertrophy' },
+                ]
+            },
+            '가슴': {
+                intro: "가슴 운동은 상체 프레스 파워와 심미적 균형의 핵심입니다. 여기서는 쇄골두(윗가슴), 흉골두(중간가슴), 하부 섬유를 모두 효과적으로 자극하는 운동들을 다룹니다. 프리웨이트의 스트렝스 이점과 머신의 근비대 이점 사이의 균형을 이해하는 것이 중요합니다.",
+                keyInsight: {
+                    title: "핵심 인사이트: 안정성-장력 트레이드오프",
+                    content: "프리웨이트(바벨, 덤벨)는 안정근을 동원하여 협응력과 스트렝스 발달에 탁월하지만, 이 불안정성이 순수 근비대에는 제한 요소가 될 수 있습니다. 반면, 머신 운동은 외부 안정성을 제공하여 목표 근육인 흉근에 최대의 장력을 집중하고 진정한 실패 지점까지 안전하게 훈련할 수 있게 해줍니다. 따라서 순수 근성장이 목표라면 머신 프레스가 더 우월한 선택일 수 있습니다."
+                },
+                exercises: [
+                    { name: '머신 벤치 프레스', tier: 'S', target: '대흉근 (전체)', strength: '높은 안정성으로 안전하고 일관된 점진적 과부하 가능.', hypertrophy: '모든 조건을 충족: 높은 장력, 전체 가동 범위, 뛰어난 안정성으로 실패 지점까지 안전하게 훈련 가능. 훌륭한 SFR.', supporters: 'Jeff Nippard', goal: 'hypertrophy' },
+                    { name: '인클라인 덤벨 프레스', tier: 'A', target: '대흉근 (쇄골두)', strength: '인클라인 각도에서 프레스 스트렝스를 발달시키며 상당한 안정화 요구.', hypertrophy: '인클라인 각도와 덤벨이 제공하는 깊은 스트레칭의 조합으로 최고의 상부 가슴 빌더.', supporters: 'Jeff Nippard, EMG 연구', goal: 'both' },
+                    { name: '바벨 벤치 프레스', tier: 'A', target: '대흉근 (흉골두)', strength: '순수 상체 프레스 스트렝스를 측정하고 구축하는 표준.', hypertrophy: '높은 중량 잠재력으로 환상적인 매스 빌더.', supporters: 'ATHLEAN-X, 다수 연구', goal: 'strength' },
+                    { name: '중량 딥스', tier: 'A', target: '대흉근 (하부/흉골두)', strength: '프레스 스트렝스를 구축하기 위한 훌륭한 복합 관절 운동.', hypertrophy: '흉근 섬유에 엄청난 스트레칭을 만들어 성장 잠재력을 자극함.', supporters: 'Jeff Nippard, ATHLEAN-X', goal: 'both' },
+                    { name: '케이블 크로스오버', tier: 'B', target: '대흉근 (내전)', strength: '해당 없음 (고립 운동)', hypertrophy: '지속적인 장력으로 가슴의 내전 기능을 독특하게 타겟팅하며, 근육-마음 연결에 탁월함.', supporters: 'ATHLEAN-X', goal: 'hypertrophy' },
+                    { name: '푸쉬업', tier: 'C', target: '대흉근 (전체)', strength: '기초적인 스트렝스 빌더이지만, 쉬운 점진적 과부하가 부족하여 제한적임.', hypertrophy: '마무리 운동으로는 좋지만, 주된 성장을 이끌기에는 더 나은 옵션이 존재함.', supporters: 'Jeff Nippard', goal: 'strength' },
+                    { name: '플레이트 프레스 / 헥스 프레스', tier: 'F', target: '삼두근 > 흉근', strength: '부하 잠재력이 낮음.', hypertrophy: '제한된 가동 범위, 흉근에 최소한의 스트레칭, 주로 삼두근을 훈련시킴. 가슴 성장에 비효율적.', supporters: 'Jeff Nippard', goal: 'hypertrophy' },
+                ]
+            },
+            '등': {
+                intro: "등 근육은 너비(광배근)와 두께(승모근, 능형근)를 모두 고려해야 하는 복합적인 부위입니다. 이 섹션에서는 수직 당기기 운동과 수평 당기기 운동을 조합하여 완벽한 V-테이퍼와 두꺼운 등을 만드는 방법을 알아봅니다.",
+                keyInsight: {
+                    title: "핵심 인사이트: '너비 대 두께' 패러다임",
+                    content: "등 훈련에서 '너비'와 '두께'를 구분하는 것은 단순한 속설이 아닌 생체역학적 현실입니다. 수직 당기기(풀업, 풀다운)는 광배근 섬유 방향과 일치하여 등의 너비를 만듭니다. 반면, 수평 당기기(로우)는 견갑골 후인을 통해 중부 등 근육(승모근, 능형근)을 직접 타겟팅하여 등의 두께와 밀도를 더합니다. 완벽한 등 발달을 위해서는 두 가지 운동 패턴을 모두 포함해야 합니다."
+                },
+                exercises: [
+                    { name: '중량 풀업 / 친업', tier: 'S', target: '등 너비 (광배근)', strength: '상대적 당기기 스트렝스의 궁극적인 척도. 딥 벨트로 높은 과부하 가능.', hypertrophy: '높은 기계적 장력, 전신 참여. 뉴트럴 그립 친업은 광배근 집중과 관절 건강에 유리함.', supporters: 'ATHLEAN-X, Jeff Nippard', goal: 'strength' },
+                    { name: '체스트 서포티드 로우', tier: 'S', target: '등 두께 (중부 등)', strength: '가슴을 지지하면 허리가 제한 요소에서 제외되어 목표 근육으로 더 무거운 중량을 당길 수 있음.', hypertrophy: '우월한 SFR. 견갑골 후인과 중부 등 근육을 실패 지점까지 쥐어짜는 데 최대한 집중할 수 있게 함.', supporters: 'Jeff Nippard', goal: 'hypertrophy' },
+                    { name: '랫 풀다운', tier: 'A', target: '등 너비 (광배근)', strength: '체중에 제한받지 않고 통제된 점진적 과부하 가능.', hypertrophy: '뛰어난 안정성으로 강한 근육-마음 연결과 실패 지점까지의 훈련을 가능하게 함. 앞으로 기울이면 광배근 스트레칭 증가.', supporters: 'Jeff Nippard, RP', goal: 'hypertrophy' },
+                    { name: '덤벨 풀오버 / 랫 프레이어', tier: 'A', target: '등 너비 (스트레칭)', strength: '해당 없음 (고립 운동)', hypertrophy: '광배근을 완전히 신장된 위치에서 독특하게 타겟팅하여 강력한 근비대 자극을 제공함.', supporters: 'Jeff Nippard, RP', goal: 'hypertrophy' },
+                    { name: '바벨 벤트오버 로우', tier: 'A', target: '등 두께 (중부 등)', strength: '강하고 두꺼운 등을 만들기 위한 기초적인 복합 관절 리프트. 전체 후면 사슬을 사용함.', hypertrophy: '높은 중량 잠재력으로 훌륭한 매스 빌더이지만, 허리 피로에 의해 제한될 수 있음.', supporters: 'ATHLEAN-X, RP', goal: 'strength' },
+                    { name: '시티드 케이블 로우', tier: 'A', target: '등 두께 (중부 등)', strength: '안정적이고 다재다능하며, 다양한 그립으로 자극을 약간 변경할 수 있음. 자세 제어가 쉬움.', hypertrophy: '케이블의 지속적인 장력과 높은 안정성으로 훌륭한 근비대 운동.', supporters: 'ATHLEAN-X, 다수 연구', goal: 'both' },
+                    { name: '티바 로우', tier: 'B', target: '등 두께 (중부 등)', strength: '뉴트럴 그립으로 무거운 중량을 다룰 수 있는 고전적인 매스 빌더.', hypertrophy: '효과적이지만, 엄격한 자세로 수행하지 않으면 허리에 스트레스를 줄 수 있음. 체스트 서포티드 버전이 더 우월함.', supporters: '', goal: 'both' },
+                ]
+            },
+            '어깨': {
+                intro: "균형 잡힌 어깨는 상체의 완성도를 높입니다. '3D' 또는 '대포알' 같은 입체적인 어깨를 만들기 위해서는 전면, 측면, 후면 삼각근을 모두 개별적으로 공략해야 합니다. 이 섹션에서는 각 부위를 위한 최고의 운동을 소개합니다.",
+                keyInsight: {
+                    title: "핵심 인사이트: '복합 운동의 충분성'이라는 착각",
+                    content: "오버헤드 프레스와 같은 복합 운동은 전면 삼각근 발달에 매우 효과적이지만, 이것만으로는 어깨를 완벽하게 발달시킬 수 없습니다. 과학적 데이터는 측면 및 후면 삼각근을 최적으로 자극하기 위해서는 래터럴 레이즈나 리버스 플라이와 같은 고립 운동이 필수적임을 명확히 보여줍니다. 균형 잡힌 어깨를 원한다면 반드시 고립 운동을 프로그램에 포함해야 합니다."
+                },
+                exercises: [
+                    { name: '시티드 덤벨/바벨 오버헤드 프레스', tier: 'S', target: '전면 삼각근', strength: '수직 프레스 스트렝스를 구축하는 기초 운동. 시티드 버전은 더 무겁고 안정적인 프레스를 가능하게 함.', hypertrophy: '전면 삼각근에 가장 높은 활성화를 보임. 고중량 점진적 과부하 가능.', supporters: 'Jeremy Ethier, RP', goal: 'strength' },
+                    { name: '덤벨/케이블 래터럴 레이즈', tier: 'S', target: '측면 삼각근', strength: '해당 없음 (고립 운동)', hypertrophy: '어깨 너비를 위해 측면 삼각근을 자극하는 가장 직접적인 방법. EMG 연구는 이 목적에서 프레스보다 우월함을 확인.', supporters: 'Jeremy Ethier, ATHLEAN-X, EMG 연구', goal: 'hypertrophy' },
+                    { name: '리버스 펙덱 / 하이 케이블 리버스 플라이', tier: 'S', target: '후면 삼각근', strength: '해당 없음 (고립 운동)', hypertrophy: '균형 잡힌 외관과 어깨 건강에 중요한 후면 삼각근에 최고의 고립과 지속적인 장력을 제공함.', supporters: 'Jeremy Ethier', goal: 'hypertrophy' },
+                    { name: '페이스 풀', tier: 'A', target: '후면 삼각근', strength: '해당 없음 (고립 운동)', hypertrophy: '후면 삼각근과 외회전근을 동시에 타겟팅하여 자세와 어깨 건강에 핵심적인 운동.', supporters: 'ATHLEAN-X', goal: 'hypertrophy' },
+                    { name: '스탠딩 오버헤드 프레스', tier: 'A', target: '전면 삼각근', strength: '시티드 프레스보다 기능적이며, 더 많은 코어 안정성과 전신 협응력을 요구함.', hypertrophy: '훌륭한 매스 빌더이지만, 순수 근비대 측면에서는 안정성이 시티드 버전에 비해 제한 요소가 될 수 있음.', supporters: 'ATHLEAN-X', goal: 'strength' },
+                ]
+            },
+            '팔': {
+                intro: "팔 운동은 단순히 크기를 키우는 것을 넘어, 이두근과 삼두근의 모든 부위를 균형 있게 발달시키는 것이 중요합니다. 이두근의 장두와 단두, 삼두근의 장두, 외측두, 내측두를 모두 자극하는 운동들을 알아봅니다.",
+                keyInsight: {
+                    title: "핵심 인사이트: 성장은 스트레칭에 있다",
+                    content: "완벽한 팔 발달의 핵심은 어깨의 위치를 조작하는 것입니다. 이두근 장두는 팔을 몸 뒤로 보내는 인클라인 컬과 같은 운동으로, 삼두근 장두는 팔을 머리 위로 드는 오버헤드 익스텐션과 같은 운동으로 최대로 스트레칭할 수 있습니다. 이 두 근육은 팔 전체 크기에 큰 비중을 차지하므로, 신장(stretch)을 강조하는 운동을 포함하는 것이 최대 성장에 필수적입니다."
+                },
+                exercises: [
+                    { name: '인클라인 덤벨 컬', tier: 'S', target: '이두근 (장두 강조)', strength: '해당 없음 (고립 운동)', hypertrophy: '이두근 장두를 최대로 스트레칭하여 독특하고 강력한 성장 자극을 제공함.', supporters: 'Jeremy Ethier, ATHLEAN-X, EMG 연구', goal: 'hypertrophy' },
+                    { name: '오버헤드 익스텐션 (케이블/EZ-바)', tier: 'S', target: '삼두근 (장두 강조)', strength: '해당 없음 (고립 운동)', hypertrophy: '삼두근의 가장 큰 부위인 장두를 완전히 신장된 위치에 놓을 수 있는 유일한 방법으로, 최대 성장에 중요함.', supporters: 'Jeremy Ethier, Jeff Nippard, RP', goal: 'hypertrophy' },
+                    { name: '바벨 / EZ-바 컬', tier: 'A', target: '이두근 (전체), 상완근', strength: '팔꿈치 굴근에 대한 최대 부하와 점진적 과부하를 가능하게 함.', hypertrophy: '이두근을 위한 고전적인 매스 빌더.', supporters: 'RP, Stronger by Science', goal: 'strength' },
+                    { name: '컨센트레이션 컬', tier: 'A', target: '이두근 (피크)', strength: '해당 없음 (고립 운동)', hypertrophy: 'EMG 연구에 따르면 뛰어난 고립과 최소한의 어깨 개입으로 가장 높은 피크 활성화를 보임.', supporters: 'ACE 연구', goal: 'hypertrophy' },
+                    { name: '클로즈 그립 벤치 프레스', tier: 'A', target: '삼두근 (전체)', strength: '삼두근 스트렝스를 구축하는 주요 복합 관절 리프트. 고중량 부하 가능.', hypertrophy: '삼두근 전체를 위한 환상적인 매스 빌더.', supporters: 'Stronger by Science, ATHLEAN-X', goal: 'strength' },
+                    { name: '딥스 (수직 상체)', tier: 'A', target: '삼두근 (전체)', strength: '삼두근 스트렝스를 위한 훌륭한 맨몸 또는 중량 운동.', hypertrophy: '깊은 스트레칭을 제공하고 고중량 과부하를 가능하게 함.', supporters: 'ATHLEAN-X', goal: 'both' },
+                    { name: '프리쳐 컬', tier: 'B', target: '이두근 (단두 강조)', strength: '해당 없음 (고립 운동)', hypertrophy: '이두근을 잘 고립시키고 단두를 강조할 수 있음. 움직임의 상단에서 장력이 떨어짐.', supporters: 'MyoMax Fitness 연구', goal: 'hypertrophy' },
+                    { name: '케이블 푸쉬다운', tier: 'B', target: '삼두근 (외측두/내측두)', strength: '해당 없음 (고립 운동)', hypertrophy: '지속적인 장력으로 삼두근을 고립시키는 데 탁월하며, 대사 스트레스와 근육-마음 연결에 좋음.', supporters: 'Jeremy Ethier, RP', goal: 'hypertrophy' },
+                ]
+            },
+            '코어': {
+                intro: "강력한 코어는 모든 움직임의 중심이자 파워의 원천입니다. 단순히 '식스팩'을 만드는 것을 넘어, 척추를 안정시키고 힘을 전달하는 기능적 코어를 만들기 위한 운동들을 소개합니다. 직접 훈련과 간접 훈련의 조화가 핵심입니다.",
+                keyInsight: {
+                    title: "핵심 인사이트: 코어 발달을 위한 이중 경로",
+                    content: "최고의 코어 훈련은 두 가지 경로를 모두 사용합니다. 첫째, 스쿼트나 데드리프트 같은 고중량 복합 운동은 그 자체로 최고의 '간접적' 코어 스트렝스 훈련입니다. 둘째, 복직근 근비대를 위한 케이블 크런치나 심부 안정화를 위한 플랭크 같은 '직접적' 고립 운동이 필요합니다. 어느 한쪽에만 의존하기보다, 두 가지를 결합하여 기능과 심미성을 모두 잡는 것이 최적의 전략입니다."
+                },
+                exercises: [
+                    { name: '바벨 스쿼트 & 데드리프트', tier: 'S', target: '스트렝스 & 안정성 (전체)', strength: '체계적 문헌 고찰에 따르면 이 리프트들은 고중량 하에서 척추를 안정시키기 위해 척추기립근, 복직근, 복사근에서 막대한 활성화를 유발함.', hypertrophy: '코어 근비대보다는 기능적 스트렝스에 더 큰 영향을 미침.', supporters: '체계적 문헌 고찰', goal: 'strength' },
+                    { name: '케이블 크런치 / 로프 크런치', tier: 'S', target: '근비대 (복직근)', strength: '해당 없음 (고립 운동)', hypertrophy: '점진적 과부하와 함께 직접적이고 부하가 걸린 척추 굴곡을 가능하게 함. 눈에 보이는 \'식스팩\' 근육을 만드는 데 우월함.', supporters: 'Jeremy Ethier', goal: 'hypertrophy' },
+                    { name: '행잉 레그/니 레이즈', tier: 'A', target: '근비대 (하복부 강조)', strength: '맨몸 스트렝스 지표.', hypertrophy: '골반 경사를 통해 복직근 하부를 강조하는 도전적인 맨몸 운동.', supporters: 'Jeremy Ethier', goal: 'hypertrophy' },
+                    { name: '앱 롤아웃', tier: 'A', target: '안정성 (신전 방지)', strength: '코어 안정성 스트렝스를 구축함.', hypertrophy: '강렬한 신전 방지 과제를 제공하여 강하고 안정적인 코어를 구축함.', supporters: '', goal: 'strength' },
+                    { name: '오버헤드 프레스 (스탠딩)', tier: 'A', target: '스트렝스 & 안정성 (전체)', strength: '요추의 과신전을 방지하기 위해 상당한 코어 활성화를 요구함.', hypertrophy: '코어 근비대에 간접적인 자극을 줌.', supporters: 'Jeremy Ethier', goal: 'strength' },
+                    { name: '플랭크 / 사이드 플랭크', tier: 'B', target: '안정성 (신전/측면 굴곡 방지)', strength: '기초적인 코어 지구력 훈련.', hypertrophy: '코어 지구력과 안정성을 위한 기초적인 등척성 운동. 근비대에는 덜 효과적.', supporters: 'Healthline, 다수 연구', goal: 'strength' },
+                ]
+            }
+        };
+
+        const appState = {
+            currentGroup: '하체',
+            currentFilter: 'all',
+            chartInstance: null,
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const navContainer = document.getElementById('muscle-group-nav');
+            const mainContent = document.getElementById('main-content');
+            const modal = document.getElementById('modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const modalContent = document.getElementById('modal-content');
+
+            function setupNav() {
+                const muscleGroups = Object.keys(exerciseData);
+                muscleGroups.forEach(group => {
+                    const button = document.createElement('button');
+                    button.textContent = group;
+                    button.className = 'nav-btn px-4 py-2 rounded-md font-semibold transition-colors duration-200 hover:bg-gray-300';
+                    button.dataset.group = group;
+                    navContainer.appendChild(button);
+                });
+                navContainer.addEventListener('click', (e) => {
+                    if (e.target.matches('.nav-btn')) {
+                        appState.currentGroup = e.target.dataset.group;
+                        appState.currentFilter = 'all';
+                        render();
+                    }
+                });
+            }
+
+            function render() {
+                updateNav();
+                renderMainContent();
+            }
+
+            function updateNav() {
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.group === appState.currentGroup);
+                });
+            }
+
+            function renderMainContent() {
+                const groupData = exerciseData[appState.currentGroup];
+                mainContent.innerHTML = `
+                    <section class="mb-12">
+                        <p class="text-center text-lg text-gray-700 max-w-3xl mx-auto">${groupData.intro}</p>
+                    </section>
+
+                    <section class="mb-12">
+                        <div class="flex justify-center items-center gap-4 mb-8">
+                            <span class="font-semibold text-gray-700">목표 필터:</span>
+                            <div class="flex rounded-md border border-gray-300">
+                                <button data-filter="all" class="filter-btn px-4 py-2 rounded-l-md transition-colors duration-200 border-r border-gray-300">전체</button>
+                                <button data-filter="strength" class="filter-btn px-4 py-2 transition-colors duration-200 border-r border-gray-300">스트렝스</button>
+                                <button data-filter="hypertrophy" class="filter-btn px-4 py-2 rounded-r-md transition-colors duration-200">근비대</button>
+                            </div>
+                        </div>
+                        <div id="exercise-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    </section>
+                    
+                    <section class="mb-12 grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
+                        <div class="lg:col-span-3 bg-amber-50 border-l-4 border-amber-400 p-6 rounded-r-lg">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">${groupData.keyInsight.title}</h3>
+                            <p class="text-gray-700">${groupData.keyInsight.content}</p>
+                        </div>
+                        <div class="lg:col-span-2 chart-container h-64 md:h-80 max-h-[350px] w-full max-w-md mx-auto">
+                            <canvas id="tier-chart"></canvas>
+                        </div>
+                    </section>
+                `;
+                renderExerciseCards();
+                renderTierChart();
+                setupFilters();
+            }
+
+            function renderExerciseCards() {
+                const grid = document.getElementById('exercise-grid');
+                const groupData = exerciseData[appState.currentGroup];
+                const filteredExercises = groupData.exercises.filter(ex => {
+                    if (appState.currentFilter === 'all') return true;
+                    return ex.goal === appState.currentFilter || ex.goal === 'both';
+                });
+
+                grid.innerHTML = '';
+                filteredExercises.forEach((ex, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'exercise-card bg-white rounded-lg shadow-md p-5 flex flex-col justify-between cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300';
+                    card.dataset.index = groupData.exercises.indexOf(ex);
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xl font-bold text-gray-800 pr-2">${ex.name}</h3>
+                                <span class="tier-${ex.tier.toLowerCase()} text-sm font-bold px-3 py-1 rounded-full whitespace-nowrap">${ex.tier}-Tier</span>
+                            </div>
+                            <p class="text-gray-600"><strong>타겟:</strong> ${ex.target}</p>
+                        </div>
+                        <div class="text-right text-sm text-blue-500 mt-4 font-semibold">상세보기 &rarr;</div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                grid.addEventListener('click', (e) => {
+                    const card = e.target.closest('.exercise-card');
+                    if (card) {
+                        const index = parseInt(card.dataset.index, 10);
+                        const exercise = exerciseData[appState.currentGroup].exercises[index];
+                        showModal(exercise);
+                    }
+                });
+            }
+            
+            function renderTierChart() {
+                const ctx = document.getElementById('tier-chart').getContext('2d');
+                const groupData = exerciseData[appState.currentGroup];
+                
+                const tierCounts = { 'S': 0, 'A': 0, 'B': 0, 'C': 0, 'F': 0 };
+                groupData.exercises.forEach(ex => {
+                    if (tierCounts.hasOwnProperty(ex.tier)) {
+                        tierCounts[ex.tier]++;
+                    }
+                });
+
+                const chartData = {
+                    labels: Object.keys(tierCounts),
+                    datasets: [{
+                        label: `${appState.currentGroup} 운동 등급 분포`,
+                        data: Object.values(tierCounts),
+                        backgroundColor: [
+                            '#FFD700', // S
+                            '#4A90E2', // A
+                            '#50E3C2', // B
+                            '#B8B8B8', // C
+                            '#D0021B', // F
+                        ],
+                        borderColor: '#F8F7F4',
+                        borderWidth: 2
+                    }]
+                };
+
+                if (appState.chartInstance) {
+                    appState.chartInstance.destroy();
+                }
+
+                appState.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: `${appState.currentGroup} 운동 등급 분포`,
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label} 등급: ${context.raw}개`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function setupFilters() {
+                const filterContainer = mainContent.querySelector('.flex.justify-center.items-center');
+                filterContainer.addEventListener('click', (e) => {
+                    if (e.target.matches('.filter-btn')) {
+                        appState.currentFilter = e.target.dataset.filter;
+                        updateFilterButtons();
+                        renderExerciseCards();
+                    }
+                });
+                updateFilterButtons();
+            }
+
+            function updateFilterButtons() {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.filter === appState.currentFilter);
+                });
+            }
+
+            function showModal(exercise) {
+                document.getElementById('modal-title').textContent = exercise.name;
+                document.getElementById('modal-target').innerHTML = `<strong>주 타겟 부위:</strong> ${exercise.target}`;
+                const modalBody = document.getElementById('modal-body');
+                modalBody.innerHTML = `
+                    <div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-2 border-b-2 border-blue-200 pb-1">💪 스트렝스 근거</h4>
+                        <p>${exercise.strength}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-2 border-b-2 border-amber-200 pb-1">📈 근비대 근거</h4>
+                        <p>${exercise.hypertrophy}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-2 border-b-2 border-gray-200 pb-1">⭐ 주요 지지자</h4>
+                        <p>${exercise.supporters || '다수 전문가 및 연구'}</p>
+                    </div>
+                `;
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modalContent.classList.remove('scale-95');
+            }
+
+            function hideModal() {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modalContent.classList.add('scale-95');
+            }
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+            modalCloseBtn.addEventListener('click', hideModal);
+
+            setupNav();
+            render();
+        });
+    </script>
+</body>
+</html>
