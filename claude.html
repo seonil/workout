@@ -412,11 +412,12 @@
             
             // 인증 상태 변화 감지
             if (cloudDataManager && cloudDataManager.auth) {
-                cloudDataManager.auth.onAuthStateChanged((user) => {
+                cloudDataManager.auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         appState.isAuthenticated = true;
                         // 전역 네비게이션 관리자에 사용자 정보 업데이트
                         navigationManager.updateUser(user);
+                        try { await workoutData.importFromCloud(); } catch (e) { console.warn('Cloud import skipped:', e); }
                         hideAuthenticationUI();
                         showMainApp();
                     } else {

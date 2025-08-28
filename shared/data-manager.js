@@ -1,11 +1,60 @@
 // 통합 데이터 관리자 - 모든 페이지에서 공유하는 데이터 관리 (로컬 저장소)
+// Cloud sync feature flags (opt-in only)
+// Enable exercise + record sync for cross-device usage
+const CLOUD_SYNC = {
+    records: true,    // workoutHistory → cloud
+    personal: true,   // personalRecords → cloud
+    exercises: true   // user-added exercises → cloud
+};
+
 class WorkoutDataManager {
     constructor() {
         this.storagePrefix = 'workout-app-';
         this.cloudDataManager = null;
         this.init();
     }
-    
+
+    // Cloud → Local import (recent records + personal records + user exercises)
+    async importFromCloud(maxRecords = 500) {
+        if (!this.cloudDataManager || !this.cloudDataManager.currentUser) return;
+        try {
+            // Import workout records
+            const cloudRecords = await this.cloudDataManager.getWorkoutRecords();
+            if (Array.isArray(cloudRecords) && cloudRecords.length) {
+                const history = this.getData('workoutHistory') || [];
+                const byKey = new Map();
+                const addRec = (r) => {
+                    const key = r.id || (r.name + r.date + r.setNumber);
+                    if (!byKey.has(key)) byKey.set(key, r);
+                };
+                history.forEach(addRec);
+                cloudRecords.slice(0, maxRecords).forEach(addRec);
+                const merged = Array.from(byKey.values()).sort((a,b) => new Date(b.date) - new Date(a.date));
+                this.setData('workoutHistory', merged);
+            }
+
+            // Import personal records (latest wins)
+            const cloudPRs = await this.cloudDataManager.getPersonalRecords();
+            if (cloudPRs && typeof cloudPRs === 'object') {
+                const localPRs = this.getData('personalRecords') || {};
+                const mergedPRs = { ...localPRs };
+                Object.keys(cloudPRs).forEach(ex => {
+                    const c = cloudPRs[ex];
+                    const l = mergedPRs[ex];
+                    if (!l || new Date(c.date) > new Date(l.date)) mergedPRs[ex] = c;
+                });
+                this.setData('personalRecords', mergedPRs);
+            }
+
+            // Import user exercises and merge (already handled on init, but ensure)
+            if (CLOUD_SYNC.exercises && this.cloudDataManager.getUserExercises) {
+                try { await this.syncUserExercisesFromCloud(); } catch {}
+            }
+        } catch (e) {
+            console.warn('Cloud import failed:', e);
+        }
+    }
+
     // 클라우드 데이터 매니저 설정
     setCloudDataManager(cloudManager) {
         this.cloudDataManager = cloudManager;
@@ -168,14 +217,18 @@ exercises: {
         this.setData('personalRecords', personalRecords);
         
         // 클라우드 저장 시도
-        if (this.cloudDataManager) {
+        if (CLOUD_SYNC.exercises && this.cloudDataManager) {
             try {
-                for (const record of records) {
-                    await this.cloudDataManager.saveWorkoutRecord(record);
+                if (CLOUD_SYNC.records) {
+                    for (const record of records) {
+                        await this.cloudDataManager.saveWorkoutRecord(record);
+                    }
                 }
                 
-                for (const [exerciseName, pr] of Object.entries(personalRecords)) {
-                    await this.cloudDataManager.savePersonalRecord(exerciseName, pr);
+                if (CLOUD_SYNC.personal) {
+                    for (const [exerciseName, pr] of Object.entries(personalRecords)) {
+                        await this.cloudDataManager.savePersonalRecord(exerciseName, pr);
+                    }
                 }
             } catch (error) {
                 console.warn('클라우드 저장 실패, 로컬에만 저장됨:', error);
@@ -220,7 +273,7 @@ exercises: {
             this.setData('exercises', exercises);
             
             // 클라우드에도 사용자 추가 운동 저장
-            if (this.cloudDataManager) {
+            if (CLOUD_SYNC.exercises && this.cloudDataManager) {
                 try {
                     await this.cloudDataManager.saveUserExercise(bodyPart, exerciseName);
                 } catch (error) {
@@ -239,7 +292,7 @@ exercises: {
             this.setData('exercises', exercises);
             
             // 클라우드에서도 사용자 추가 운동 제거
-            if (this.cloudDataManager) {
+            if (CLOUD_SYNC.exercises && this.cloudDataManager) {
                 try {
                     await this.cloudDataManager.removeUserExercise(bodyPart, exerciseName);
                 } catch (error) {

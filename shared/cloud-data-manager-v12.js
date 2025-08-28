@@ -22,6 +22,9 @@ import {
     signOut 
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+// Disable automatic local→cloud sync by default
+const AUTO_SYNC_ENABLED = false;
+
 class CloudDataManager {
     constructor() {
         this.currentUser = null;
@@ -35,7 +38,7 @@ class CloudDataManager {
         window.addEventListener('online', () => {
             this.isOnline = true;
             console.log('온라인 상태 - 데이터 동기화 시작');
-            this.syncLocalToCloud();
+            if (AUTO_SYNC_ENABLED) this.syncLocalToCloud();
         });
         
         window.addEventListener('offline', () => {
@@ -54,7 +57,7 @@ class CloudDataManager {
                         displayName: user.displayName,
                         isAnonymous: user.isAnonymous
                     });
-                    this.syncLocalToCloud();
+                    if (AUTO_SYNC_ENABLED) this.syncLocalToCloud();
                 } else {
                     console.log('❌ 사용자 로그아웃됨');
                 }
@@ -279,8 +282,19 @@ class CloudDataManager {
             // 로컬 운동 기록 동기화 (성공 시 로컬에도 synced 반영)
             const localRecords = this.localDataManager.getData('workoutHistory') || [];
             let syncedCount = 0;
+            // 대용량 동기화로 인한 프리즈 방지: 한 세션당 최대 처리 개수 제한
+            const MAX_SYNC_PER_SESSION = 200;
+            try {
+                let unsyncedCount = 0;
+                for (let i = 0; i < localRecords.length; i++) {
+                    if (!localRecords[i]?.synced) unsyncedCount++;
+                }
+                if (unsyncedCount > MAX_SYNC_PER_SESSION) {
+                    console.warn(`동기화 대기 항목이 많아(${unsyncedCount}개), 이번 세션에는 최대 ${MAX_SYNC_PER_SESSION}개만 처리합니다.`);
+                }
+            } catch (_) {}
             let changed = false;
-            for (let i = 0; i < localRecords.length; i++) {
+            for (let i = 0; i < localRecords.length && syncedCount < MAX_SYNC_PER_SESSION; i++) {
                 const rec = localRecords[i];
                 if (!rec.synced) {
                     try {
