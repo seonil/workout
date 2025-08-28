@@ -472,20 +472,26 @@
 
             document.getElementById('exercise-form').innerHTML = formHtml;
             
-            // 이벤트 리스너 추가
-            if (document.getElementById('body-part-select')) {
-                document.getElementById('body-part-select').addEventListener('change', handleBodyPartChange);
+            // 이벤트 리스너 추가 (중복 방지)
+            const bodyPartSelect = document.getElementById('body-part-select');
+            if (bodyPartSelect) {
+                bodyPartSelect.removeEventListener('change', handleBodyPartChange);
+                bodyPartSelect.addEventListener('change', handleBodyPartChange);
             }
-            if (document.getElementById('exercise-select')) {
-                document.getElementById('exercise-select').addEventListener('change', handleExerciseChange);
+            const exerciseSelect = document.getElementById('exercise-select');
+            if (exerciseSelect) {
+                exerciseSelect.removeEventListener('change', handleExerciseChange);
+                exerciseSelect.addEventListener('change', handleExerciseChange);
             }
-            if (document.getElementById('exercise-notes')) {
-                document.getElementById('exercise-notes').addEventListener('input', (e) => {
-                    appState.notes = e.target.value;
-                });
+            const exerciseNotes = document.getElementById('exercise-notes');
+            if (exerciseNotes) {
+                exerciseNotes.removeEventListener('input', handleNotesChange);
+                exerciseNotes.addEventListener('input', handleNotesChange);
             }
-            if (document.getElementById('complete-exercise')) {
-                document.getElementById('complete-exercise').addEventListener('click', handleCompleteExercise);
+            const completeButton = document.getElementById('complete-exercise');
+            if (completeButton) {
+                completeButton.removeEventListener('click', handleCompleteExercise);
+                completeButton.addEventListener('click', handleCompleteExercise);
             }
             
             // 세트 입력 이벤트 리스너
@@ -546,6 +552,10 @@
             renderExerciseForm();
         }
 
+        function handleNotesChange(e) {
+            appState.notes = e.target.value;
+        }
+
         function updateSet(index, field, value) {
             appState.sets[index][field] = value;
             updateTotalVolume();
@@ -576,9 +586,15 @@
         }
 
         function handleCompleteExercise() {
+            // 중복 실행 방지
+            const button = document.getElementById('complete-exercise');
+            if (button.disabled) return;
+            button.disabled = true;
+            
             const validSets = getValidSets();
             if (validSets.length === 0) {
                 alert('최소 1세트의 무게와 반복수를 입력해주세요.');
+                button.disabled = false;
                 return;
             }
             
@@ -610,6 +626,8 @@
                 renderWorkoutHistory();
                 
                 alert(`${exerciseName} ${validSets.length}세트가 기록되었습니다!`);
+            } else {
+                button.disabled = false;
             }
         }
 
