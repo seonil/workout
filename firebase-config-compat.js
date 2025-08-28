@@ -1,12 +1,12 @@
 // Firebase 설정 파일 (Compat 버전)
 const firebaseConfig = {
-    apiKey: "AIzaSyBSt4LChzWMoH7GC4L4IttIkAgArci4Gss",
-    authDomain: "healthproject-e682c.firebaseapp.com",
-    projectId: "healthproject-e682c",
-    storageBucket: "healthproject-e682c.firebasestorage.app",
-    messagingSenderId: "192611227289",
-    appId: "1:192611227289:web:7b68f366cefb3ba7018a08",
-    measurementId: "G-H97Z9HGD55"
+    // 데모용 설정 - 실제 Firebase 프로젝트 설정으로 교체하세요
+    apiKey: "demo-api-key-replace-with-your-key",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "your-app-id"
 };
 
 // Firebase 초기화

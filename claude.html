@@ -9,13 +9,10 @@
     <link rel="stylesheet" href="components/common-styles.css">
     <link rel="stylesheet" href="components/auth-styles.css">
     
-    <!-- Firebase SDK CDN -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config-compat.js"></script>
-    <script src="shared/cloud-data-manager-compat.js"></script>
-    <script src="components/auth-component-compat.js"></script>
+    <!-- Firebase v12 모던 SDK -->
+    <script type="module" src="firebase-config-v12.js"></script>
+    <script type="module" src="shared/cloud-data-manager-v12.js"></script>
+    <script type="module" src="components/auth-component-v12.js"></script>
     
     <script src="shared/data-manager.js"></script>
     <script src="shared/utils.js"></script>
@@ -357,10 +354,15 @@
         
         async function initializeApp() {
             try {
-                // Firebase가 로드되었는지 확인
-                if (typeof firebase === 'undefined') {
-                    throw new Error('Firebase SDK가 로드되지 않았습니다.');
+                // 모던 Firebase 모듈 로드 대기
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Firebase가 전역으로 로드되었는지 확인
+                if (!window.firebaseApp || !window.auth || !window.db) {
+                    throw new Error('Firebase 모듈 로드 실패');
                 }
+                
+                console.log('✅ Firebase v12 초기화 완료');
                 
                 // 클라우드 데이터 매니저 초기화
                 cloudDataManager = new CloudDataManager();
@@ -377,12 +379,8 @@
                 showAuthenticationUI();
                 
             } catch (error) {
-                console.error('Firebase 초기화 실패, 로컬 모드로 실행:', error);
-                // Firebase 없이 로컬 모드로 실행
-                workoutData = new WorkoutDataManager();
-                navigation = new WorkoutNavigation();
-                navigation.init();
-                showMainApp();
+                console.error('❌ Firebase 초기화 실패:', error);
+                alert('Firebase 초기화에 실패했습니다. 페이지를 새로고침해 주세요.\n\n에러: ' + error.message);
             }
         }
         

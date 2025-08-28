@@ -1,17 +1,16 @@
-// 사용자 인증 컴포넌트 (Compat 버전)
+// 사용자 인증 컴포넌트 (Firebase v12)
 class AuthComponent {
     constructor(cloudDataManager) {
         this.cloudDataManager = cloudDataManager;
         this.currentUser = null;
         this.isInitialized = false;
-        this.auth = window.auth;
         this.init();
     }
     
     init() {
         // 인증 상태 변화 감지
-        if (this.auth) {
-            this.auth.onAuthStateChanged((user) => {
+        if (this.cloudDataManager) {
+            this.cloudDataManager.onAuthStateChanged((user) => {
                 this.currentUser = user;
                 this.updateUI();
                 
@@ -25,10 +24,17 @@ class AuthComponent {
     
     // 사용자 로그인 후 콜백
     onUserLoggedIn(user) {
-        console.log('사용자 로그인:', user.email || user.uid);
+        const displayName = user.displayName || user.email || '사용자';
+        console.log('🎉 사용자 로그인 완료:', displayName);
+        
+        // 환영 메시지
+        this.showSuccess(`환영합니다, ${displayName}님! 🎉`);
+        
         // 데이터 동기화 시작
         if (this.cloudDataManager) {
-            this.cloudDataManager.syncLocalToCloud();
+            setTimeout(() => {
+                this.cloudDataManager.syncLocalToCloud();
+            }, 1000);
         }
     }
     
@@ -60,15 +66,19 @@ class AuthComponent {
                 <div class="auth-benefits">
                     <div class="benefit-item">
                         <span class="benefit-icon">☁️</span>
-                        <span>클라우드 백업</span>
+                        <span>실시간 클라우드 백업</span>
                     </div>
                     <div class="benefit-item">
                         <span class="benefit-icon">📱</span>
-                        <span>기기 간 동기화</span>
+                        <span>모든 기기에서 동기화</span>
                     </div>
                     <div class="benefit-item">
                         <span class="benefit-icon">📊</span>
-                        <span>진행 상황 분석</span>
+                        <span>진행 상황 분석 & 통계</span>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">🔒</span>
+                        <span>안전한 데이터 보호</span>
                     </div>
                 </div>
                 
@@ -80,7 +90,7 @@ class AuthComponent {
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                         </svg>
-                        Google 계정으로 계속하기
+                        Google 계정으로 로그인
                     </button>
                     
                     <div class="auth-divider">
@@ -88,12 +98,13 @@ class AuthComponent {
                     </div>
                     
                     <button class="btn-anonymous" id="anonymous-login-btn">
-                        👤 익명으로 사용하기
+                        👤 익명으로 시작하기
                     </button>
                 </div>
                 
                 <div class="auth-note">
-                    <p>익명 사용 시 데이터가 기기에만 저장되며, 앱 삭제 시 사라집니다.</p>
+                    <p><strong>Google 로그인 권장:</strong> 데이터 백업과 모든 기기에서의 동기화가 지원됩니다.</p>
+                    <p><strong>익명 사용:</strong> 이 기기에만 데이터가 저장되며, 앱 삭제 시 데이터가 사라집니다.</p>
                 </div>
             </div>
         `;
@@ -103,17 +114,19 @@ class AuthComponent {
     createLoggedInUI() {
         const user = this.currentUser;
         const isAnonymous = user.isAnonymous;
+        const userName = user.displayName || user.email || '사용자';
         
         return `
             <div class="user-info">
                 <div class="user-avatar">
-                    ${isAnonymous ? '👤' : (user.photoURL ? `<img src="${user.photoURL}" alt="프로필">` : '👤')}
+                    ${isAnonymous ? '👤' : (user.photoURL ? `<img src="${user.photoURL}" alt="프로필" referrerpolicy="no-referrer">` : '👤')}
                 </div>
                 <div class="user-details">
-                    <div class="user-name">${isAnonymous ? '익명 사용자' : (user.displayName || user.email)}</div>
+                    <div class="user-name">${isAnonymous ? '익명 사용자' : userName}</div>
+                    <div class="user-email">${isAnonymous ? 'guest@local' : (user.email || '')}</div>
                     <div class="user-status">
                         <span class="status-indicator ${navigator.onLine ? 'online' : 'offline'}"></span>
-                        ${navigator.onLine ? '온라인' : '오프라인'}
+                        ${navigator.onLine ? '온라인 - 동기화 활성' : '오프라인 - 로컬 저장'}
                     </div>
                 </div>
                 <div class="user-actions">
@@ -122,7 +135,9 @@ class AuthComponent {
                             🔄 Google 계정 연결
                         </button>
                     ` : ''}
-                    <button class="btn-logout" id="logout-btn">로그아웃</button>
+                    <button class="btn-logout" id="logout-btn">
+                        ${isAnonymous ? '종료' : '로그아웃'}
+                    </button>
                 </div>
             </div>
         `;
@@ -159,13 +174,24 @@ class AuthComponent {
     async handleGoogleLogin() {
         try {
             this.showLoading('Google 계정으로 로그인 중...');
-            await this.cloudDataManager.signInWithGoogle();
-            this.showSuccess('로그인 성공!');
+            
+            const user = await this.cloudDataManager.signInWithGoogle();
+            
+            this.showSuccess(`Google 로그인 성공! 환영합니다, ${user.displayName || user.email}님! 🎉`);
+            
         } catch (error) {
-            if (error.code === 'auth/configuration-not-found') {
-                this.showError('Firebase 프로젝트 설정에 문제가 있습니다.\n지금은 익명 로그인을 사용하세요.');
+            console.error('Google 로그인 에러:', error);
+            
+            if (error.code === 'auth/popup-closed-by-user') {
+                this.showError('로그인 창이 닫혔습니다. 다시 시도해 주세요.');
+            } else if (error.code === 'auth/popup-blocked') {
+                this.showError('팝업이 차단되었습니다. 브라우저 설정을 확인해 주세요.');
+            } else if (error.code === 'auth/network-request-failed') {
+                this.showError('네트워크 연결을 확인해 주세요.');
+            } else if (error.code === 'auth/configuration-not-found') {
+                this.showError('Firebase 설정 오류입니다. 관리자에게 문의하세요.');
             } else {
-                this.showError('로그인 실패: ' + error.message);
+                this.showError(`로그인 실패: ${error.message}`);
             }
         } finally {
             this.hideLoading();
@@ -176,10 +202,14 @@ class AuthComponent {
     async handleAnonymousLogin() {
         try {
             this.showLoading('익명 계정으로 시작 중...');
-            await this.cloudDataManager.signInAnonymously();
-            this.showSuccess('익명 로그인 성공!');
+            
+            const user = await this.cloudDataManager.signInAnonymously();
+            
+            this.showSuccess('익명 로그인 성공! 바로 시작하실 수 있습니다. 👤');
+            
         } catch (error) {
-            this.showError('로그인 실패: ' + error.message);
+            console.error('익명 로그인 에러:', error);
+            this.showError(`익명 로그인 실패: ${error.message}`);
         } finally {
             this.hideLoading();
         }
@@ -187,12 +217,23 @@ class AuthComponent {
     
     // 로그아웃 처리
     async handleLogout() {
+        const isAnonymous = this.currentUser?.isAnonymous;
+        const confirmMessage = isAnonymous 
+            ? '익명 세션을 종료하시겠습니까?' 
+            : '로그아웃 하시겠습니까? 로컬 데이터는 보존됩니다.';
+            
+        if (!confirm(confirmMessage)) return;
+        
         try {
             this.showLoading('로그아웃 중...');
+            
             await this.cloudDataManager.signOutUser();
-            this.showSuccess('로그아웃되었습니다');
+            
+            this.showSuccess(isAnonymous ? '세션이 종료되었습니다.' : '로그아웃되었습니다. 👋');
+            
         } catch (error) {
-            this.showError('로그아웃 실패: ' + error.message);
+            console.error('로그아웃 에러:', error);
+            this.showError(`로그아웃 실패: ${error.message}`);
         } finally {
             this.hideLoading();
         }
@@ -217,8 +258,11 @@ class AuthComponent {
         loadingEl.id = 'auth-loading';
         loadingEl.className = 'auth-loading';
         loadingEl.innerHTML = `
-            <div class="loading-spinner"></div>
-            <div class="loading-message">${message}</div>
+            <div class="loading-overlay">
+                <div class="loading-spinner"></div>
+                <div class="loading-message">${message}</div>
+                <div class="loading-tip">잠시만 기다려 주세요...</div>
+            </div>
         `;
         document.body.appendChild(loadingEl);
     }
@@ -233,30 +277,39 @@ class AuthComponent {
     
     // 성공 메시지
     showSuccess(message) {
-        this.showToast(message, 'success');
+        this.showToast(message, 'success', 4000);
     }
     
     // 에러 메시지
     showError(message) {
-        this.showToast(message, 'error');
+        this.showToast(message, 'error', 6000);
     }
     
     // 토스트 메시지
-    showToast(message, type = 'info') {
+    showToast(message, type = 'info', duration = 3000) {
         const toast = document.createElement('div');
         toast.className = `auth-toast toast-${type}`;
-        toast.textContent = message;
+        
+        const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+        toast.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-message">${message}</span>`;
         
         document.body.appendChild(toast);
         
-        setTimeout(() => {
+        // 애니메이션
+        requestAnimationFrame(() => {
             toast.classList.add('show');
-        }, 100);
+        });
         
         setTimeout(() => {
-            toast.classList.remove('show');
+            toast.classList.add('fade-out');
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, duration);
+        
+        // 클릭시 즉시 닫기
+        toast.addEventListener('click', () => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+        });
     }
     
     // 사용자 정보 반환
@@ -272,3 +325,4 @@ class AuthComponent {
 
 // 전역에서 사용할 수 있도록 export
 window.AuthComponent = AuthComponent;
+export default AuthComponent;

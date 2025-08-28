@@ -136,7 +136,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1rem;
+    padding: 1.5rem;
     background: white;
     border-radius: 0.75rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -169,13 +169,20 @@
     font-weight: 600;
     color: #1a202c;
     margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+}
+
+.user-email {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
 }
 
 .user-status {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: #6b7280;
 }
 
@@ -239,28 +246,43 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.6);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     z-index: 10000;
-    color: white;
+}
+
+.loading-overlay {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    max-width: 300px;
+    width: 90%;
 }
 
 .loading-spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid rgba(255,255,255,0.3);
-    border-top: 4px solid white;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+    margin: 0 auto 1rem;
 }
 
 .loading-message {
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 0.5rem;
+}
+
+.loading-tip {
+    font-size: 0.875rem;
+    color: #6b7280;
 }
 
 @keyframes spin {
@@ -274,28 +296,53 @@
     top: 20px;
     right: 20px;
     padding: 1rem 1.5rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     color: white;
     font-weight: 500;
     z-index: 10001;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+    transform: translateX(120%);
+    transition: all 0.3s ease;
+    max-width: 400px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
 }
 
 .auth-toast.show {
     transform: translateX(0);
 }
 
+.auth-toast.fade-out {
+    transform: translateX(120%);
+    opacity: 0;
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    flex: 1;
+    line-height: 1.4;
+}
+
 .toast-success {
-    background: #10b981;
+    background: linear-gradient(135deg, #10b981, #059669);
 }
 
 .toast-error {
-    background: #ef4444;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
 .toast-info {
-    background: #3b82f6;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.auth-toast:hover {
+    transform: translateX(-5px) scale(1.02);
 }
 
 /* 반응형 */
