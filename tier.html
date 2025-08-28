@@ -221,7 +221,7 @@
         function initializeApp() {
             // 전역 네비게이션 관리자 사용
             navigation = navigationManager.init();
-            document.getElementById('navigation-container').innerHTML = navigation.render();
+            navigation.renderToContainer('navigation-container');
         }
 
         document.addEventListener('DOMContentLoaded', () => {

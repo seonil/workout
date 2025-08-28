@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="components/common-styles.css">
     <script src="shared/data-manager.js"></script>
     <script src="shared/utils.js"></script>
-    <script src="components/navigation.js">
+    <script src="components/navigation.js"></script>
     <script src="shared/navigation-manager.js"></script>
     <style>
         /* 하이브리드 루틴 페이지 전용 스타일 */
@@ -382,7 +382,7 @@
         function initializeApp() {
             // 전역 네비게이션 관리자 사용
             navigation = navigationManager.init();
-            document.getElementById('navigation-container').innerHTML = navigation.render();
+            navigation.renderToContainer('navigation-container');
             
             setupEventListeners();
             renderDaysSelector();

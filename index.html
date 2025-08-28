@@ -72,7 +72,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 네비게이션 초기화 (전역 관리자 사용)
             const navigation = navigationManager.init();
-            document.getElementById('navigation-container').innerHTML = navigation.render();
+            navigation.renderToContainer('navigation-container');
 
             // 데이터 매니저 초기화
             const dataManager = new WorkoutDataManager();

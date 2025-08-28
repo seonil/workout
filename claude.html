@@ -358,7 +358,7 @@
             try {
                 // 네비게이션 먼저 초기화 (Firebase 로딩과 독립적으로)
                 navigation = navigationManager.init();
-                document.getElementById('navigation-container').innerHTML = navigation.render();
+                navigation.renderToContainer('navigation-container');
                 
                 // 모던 Firebase 모듈 로드 대기
                 await new Promise(resolve => setTimeout(resolve, 500));

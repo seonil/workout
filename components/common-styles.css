@@ -84,8 +84,9 @@ body {
     box-shadow: var(--shadow-lg);
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 9999;
     transition: all 0.3s ease;
+    width: 100%;
 }
 
 /* 로그인 시 red-ish 테마 */
@@ -99,13 +100,15 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 var(--spacing-5);
+    padding: 0 var(--spacing-4);
+    min-height: 60px;
 }
 
 .nav-items {
     display: flex;
-    gap: var(--spacing-5);
-    flex-wrap: wrap;
+    gap: var(--spacing-3);
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 .nav-user {
@@ -116,16 +119,17 @@ body {
 .nav-item {
     display: flex;
     align-items: center;
-    gap: var(--spacing-2);
+    gap: var(--spacing-1);
     color: white;
     text-decoration: none;
-    padding: var(--spacing-3) var(--spacing-5);
-    border-radius: 25px;
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: 20px;
     background: rgba(255, 255, 255, 0.1);
     font-weight: 600;
     transition: all 0.3s ease;
     border: 2px solid transparent;
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -139,11 +143,12 @@ body {
 }
 
 .nav-icon {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
 }
 
 .nav-label {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
 }
 
 /* 네비게이션 사용자 섹션 */
@@ -227,8 +232,8 @@ body {
     transform: scale(1.1);
 }
 
-/* 반응형 네비게이션 */
-@media (max-width: 768px) {
+/* 반응형 네비게이션 - 매우 작은 화면에서만 적용 */
+@media (max-width: 480px) {
     .workout-nav {
         padding: var(--spacing-2) 0; /* 네비게이션 바 전체 높이 줄임 */
     }

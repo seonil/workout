@@ -93,15 +93,18 @@ class WorkoutNavigation {
         `;
     }
     
-    // 네비게이션을 DOM에 삽입
+    // 네비게이션을 DOM에 삽입 (레거시 메서드 - 사용하지 않음)
     init() {
-        const existingNav = document.querySelector('.workout-nav');
-        if (existingNav) {
-            existingNav.remove();
-        }
+        // 기존 방식: body에 직접 삽입 (더 이상 사용하지 않음)
+        // const existingNav = document.querySelector('.workout-nav');
+        // if (existingNav) {
+        //     existingNav.remove();
+        // }
+        // document.body.insertAdjacentHTML('afterbegin', this.render());
+        // this.attachEventListeners();
         
-        document.body.insertAdjacentHTML('afterbegin', this.render());
-        this.attachEventListeners();
+        // 새로운 방식: 컨테이너 기반 렌더링만 사용
+        console.log('Navigation.init() 호출됨 - 레거시 메서드');
     }
     
     attachEventListeners() {
@@ -181,6 +184,17 @@ class WorkoutNavigation {
                 }
             });
         }
+    }
+    
+    // 네비게이션을 컨테이너에 렌더링하고 이벤트 리스너 연결
+    renderToContainer(containerId) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = this.render();
+            this.attachEventListeners();
+            return true;
+        }
+        return false;
     }
 }
 
