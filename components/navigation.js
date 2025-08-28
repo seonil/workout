@@ -156,8 +156,30 @@ class WorkoutNavigation {
         const userSection = document.querySelector('.nav-user');
         if (userSection) {
             userSection.innerHTML = this.renderUserSection();
-            // 이벤트 리스너 다시 연결
-            this.attachEventListeners();
+            // 사용자 섹션만 이벤트 리스너 연결 (무한루프 방지)
+            this.attachUserEventListeners();
+        }
+    }
+    
+    // 사용자 섹션 이벤트 리스너만 연결
+    attachUserEventListeners() {
+        // 로그인 버튼 이벤트
+        const loginBtn = document.querySelector('#nav-login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                window.location.href = 'claude.html';
+            });
+        }
+        
+        // 로그아웃 버튼 이벤트
+        const logoutBtn = document.querySelector('#nav-logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.onLogout) {
+                    this.onLogout();
+                }
+            });
         }
     }
 }

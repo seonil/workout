@@ -264,7 +264,8 @@
     </style>
 </head>
 <body>
-    <!-- 네비게이션은 JavaScript로 동적 생성 -->
+    <!-- 네비게이션 컨테이너 -->
+    <div id="navigation-container"></div>
 
     <div class="container main-container">
         <div class="app-content" style="display: none;">
@@ -355,6 +356,10 @@
         
         async function initializeApp() {
             try {
+                // 네비게이션 먼저 초기화 (Firebase 로딩과 독립적으로)
+                navigation = navigationManager.init();
+                document.getElementById('navigation-container').innerHTML = navigation.render();
+                
                 // 모던 Firebase 모듈 로드 대기
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
@@ -372,8 +377,6 @@
                 // 로컬 데이터 매니저 초기화
                 workoutData = new WorkoutDataManager();
                 workoutData.setCloudDataManager(cloudDataManager);
-                
-                navigation = navigationManager.init();
                 
                 // Firebase 로그아웃 기능 추가 설정
                 navigationManager.firebaseLogout = async () => {
