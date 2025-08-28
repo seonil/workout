@@ -97,8 +97,9 @@ class CloudDataManager {
     // 운동 기록 저장
     async saveWorkoutRecord(record) {
         if (!this.isOnline) {
-            // 오프라인일 때는 로컬에 저장
-            return this.localDataManager?.addWorkoutRecord(record);
+            // 오프라인일 때는 클라우드 저장을 건너뛰고
+            // 로컬 데이터는 이미 저장되어 있으므로 그대로 반환
+            return record;
         }
         
         try {
@@ -122,8 +123,8 @@ class CloudDataManager {
             return recordWithTimestamp;
         } catch (error) {
             console.error('운동 기록 저장 실패:', error);
-            // 실패 시 로컬에 저장
-            return this.localDataManager?.addWorkoutRecord(record);
+            // 로컬 데이터는 이미 저장되어 있으므로 재귀 호출을 방지하기 위해 그대로 반환
+            return record;
         }
     }
     
