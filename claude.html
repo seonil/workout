@@ -17,6 +17,7 @@
     <script src="shared/data-manager.js"></script>
     <script src="shared/utils.js"></script>
     <script src="components/navigation.js"></script>
+    <script src="shared/navigation-manager.js"></script>
     <style>
         /* 운동 관리 페이지 전용 스타일 */
         .exercise-item {
@@ -372,8 +373,14 @@
                 workoutData = new WorkoutDataManager();
                 workoutData.setCloudDataManager(cloudDataManager);
                 
-                navigation = new WorkoutNavigation();
-                navigation.init();
+                navigation = navigationManager.init();
+                
+                // Firebase 로그아웃 기능 추가 설정
+                navigationManager.firebaseLogout = async () => {
+                    if (cloudDataManager && cloudDataManager.signOutUser) {
+                        await cloudDataManager.signOutUser();
+                    }
+                };
                 
                 // 인증 UI 표시
                 showAuthenticationUI();
@@ -404,10 +411,14 @@
                 cloudDataManager.auth.onAuthStateChanged((user) => {
                     if (user) {
                         appState.isAuthenticated = true;
+                        // 전역 네비게이션 관리자에 사용자 정보 업데이트
+                        navigationManager.updateUser(user);
                         hideAuthenticationUI();
                         showMainApp();
                     } else {
                         appState.isAuthenticated = false;
+                        // 전역 네비게이션 관리자에서 사용자 정보 제거
+                        navigationManager.updateUser(null);
                     }
                 });
             }

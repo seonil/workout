@@ -164,16 +164,16 @@ class AuthComponent {
         } catch (error) {
             console.error('Google 로그인 에러:', error);
             
-            if (error.code === 'auth/popup-closed-by-user') {
+            if (error.code === 'auth/configuration-not-found') {
+                this.showError(`🔧 Firebase 설정이 필요합니다!\n\n다음 단계를 완료해 주세요:\n1. Firebase Console > Authentication 활성화\n2. Google 로그인 제공업체 활성화\n3. 승인된 도메인에 'localhost' 추가\n\n자세한 내용은 FIREBASE-SETUP.md 파일을 확인하세요.`);
+            } else if (error.code === 'auth/popup-closed-by-user') {
                 this.showError('로그인 창이 닫혔습니다. 다시 시도해 주세요.');
             } else if (error.code === 'auth/popup-blocked') {
                 this.showError('팝업이 차단되었습니다. 브라우저 설정을 확인해 주세요.');
             } else if (error.code === 'auth/network-request-failed') {
                 this.showError('네트워크 연결을 확인해 주세요.');
-            } else if (error.code === 'auth/configuration-not-found') {
-                this.showError('Firebase 설정 오류입니다. 관리자에게 문의하세요.');
             } else {
-                this.showError(`로그인 실패: ${error.message}`);
+                this.showError(`로그인 실패: ${error.message}\n\n에러 코드: ${error.code}`);
             }
         } finally {
             this.hideLoading();

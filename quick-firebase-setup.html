@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase 설정 가이드 - KPR 추적기</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .step h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .code {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #00b894;
+            border-radius: 5px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+        }
+        .btn:hover {
+            background: #0056b3;
+            color: white;
+        }
+        .checklist {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .checklist input[type="checkbox"] {
+            margin-right: 0.5rem;
+            transform: scale(1.2);
+        }
+        .checklist li {
+            margin: 0.75rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 Firebase Google 인증 설정</h1>
+        <p>KPR 추적기 Google 로그인 활성화 가이드</p>
+    </div>
+
+    <div class="warning">
+        <strong>⚠️ 현재 문제:</strong> <code>auth/configuration-not-found</code> 에러가 발생하고 있습니다.<br>
+        Firebase Console에서 Google 인증을 활성화해야 합니다.
+    </div>
+
+    <div class="step">
+        <h3>🚀 1단계: Firebase Console 접속</h3>
+        <p>Firebase 프로젝트 관리 페이지로 이동합니다.</p>
+        <a href="https://console.firebase.google.com/project/healthproject-e682c" target="_blank" class="btn">
+            Firebase Console 열기
+        </a>
+    </div>
+
+    <div class="step">
+        <h3>🔐 2단계: Authentication 활성화</h3>
+        <ol>
+            <li>좌측 메뉴에서 <strong>"Authentication"</strong> 클릭</li>
+            <li><strong>"Get started"</strong> 버튼 클릭 (처음인 경우)</li>
+            <li><strong>"Sign-in method"</strong> 탭 클릭</li>
+            <li><strong>"Google"</strong> 제공업체를 찾아서 클릭</li>
+            <li><strong>"Enable"</strong> 토글을 <span style="color: green; font-weight: bold;">ON</span>으로 설정</li>
+            <li>설정 정보 입력:
+                <div class="code">
+Project public-facing name: KPR 추적기
+Project support email: [본인 이메일 주소]
+                </div>
+            </li>
+            <li><strong>"Save"</strong> 버튼 클릭</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>🌐 3단계: 승인된 도메인 추가</h3>
+        <ol>
+            <li>같은 Authentication 페이지에서 <strong>"Settings"</strong> 탭 클릭</li>
+            <li><strong>"Authorized domains"</strong> 섹션 찾기</li>
+            <li><strong>"Add domain"</strong> 버튼 클릭</li>
+            <li>다음 도메인들을 하나씩 추가:
+                <div class="code">
+localhost<br>
+127.0.0.1
+                </div>
+            </li>
+        </ol>
+        <div class="warning">
+            <strong>중요:</strong> localhost와 127.0.0.1을 반드시 추가해야 로컬 개발 환경에서 테스트할 수 있습니다.
+        </div>
+    </div>
+
+    <div class="step">
+        <h3>⚙️ 4단계: OAuth 동의 화면 설정</h3>
+        <p>Google Cloud Console에서 OAuth 설정을 완료해야 합니다.</p>
+        <a href="https://console.cloud.google.com/apis/credentials/consent?project=healthproject-e682c" target="_blank" class="btn">
+            Google Cloud Console 열기
+        </a>
+        <ol>
+            <li><strong>"User Type"</strong>: <code>External</code> 선택</li>
+            <li><strong>"CREATE"</strong> 클릭</li>
+            <li>앱 정보 입력:
+                <div class="code">
+App name: KPR 추적기
+User support email: [본인 이메일 주소]
+Developer contact information: [본인 이메일 주소]
+                </div>
+            </li>
+            <li><strong>"SAVE AND CONTINUE"</strong> 클릭</li>
+            <li>나머지 단계는 <strong>"SAVE AND CONTINUE"</strong>로 넘어가기</li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h3>🧪 5단계: 테스트 사용자 추가</h3>
+        <ol>
+            <li>OAuth consent screen에서 <strong>"Test users"</strong> 탭 클릭</li>
+            <li><strong>"ADD USERS"</strong> 클릭</li>
+            <li>테스트에 사용할 Google 계정 이메일 주소 입력</li>
+            <li><strong>"SAVE"</strong> 클릭</li>
+        </ol>
+        <div class="warning">
+            <strong>개발 중:</strong> 앱이 프로덕션 모드로 승인되기 전까지는 여기에 추가된 테스트 사용자만 로그인할 수 있습니다.
+        </div>
+    </div>
+
+    <div class="checklist">
+        <h3>✅ 설정 완료 체크리스트</h3>
+        <ul style="list-style: none;">
+            <li><input type="checkbox"> Firebase Authentication 활성화</li>
+            <li><input type="checkbox"> Google 로그인 제공업체 활성화</li>
+            <li><input type="checkbox"> localhost 도메인 추가</li>
+            <li><input type="checkbox"> 127.0.0.1 도메인 추가</li>
+            <li><input type="checkbox"> OAuth 동의 화면 설정</li>
+            <li><input type="checkbox"> 테스트 사용자 추가</li>
+        </ul>
+    </div>
+
+    <div class="success">
+        <h3>🎉 설정 완료 후 테스트</h3>
+        <ol>
+            <li>모든 설정이 완료되면 브라우저를 새로고침하세요 (<code>Ctrl + F5</code>)</li>
+            <li><code>http://localhost:8000/claude.html</code>로 접속</li>
+            <li>Google 로그인 버튼 클릭</li>
+            <li>테스트 사용자로 등록한 Google 계정으로 로그인</li>
+        </ol>
+        <p><strong>성공하면</strong> 사용자 정보가 표시되고 운동 기록이 클라우드에 저장됩니다! 🏋️‍♂️</p>
+    </div>
+
+    <div class="step">
+        <h3>❓ 여전히 문제가 있다면</h3>
+        <ul>
+            <li><strong>브라우저 캐시 삭제</strong>: 개발자 도구 > Application > Storage > Clear storage</li>
+            <li><strong>다른 브라우저</strong>에서 테스트</li>
+            <li><strong>시크릿 모드</strong>에서 테스트</li>
+            <li><strong>방화벽/보안 소프트웨어</strong> 확인</li>
+        </ul>
+    </div>
+
+    <script>
+        // 체크리스트 진행률 표시
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                const checked = document.querySelectorAll('input[type="checkbox"]:checked').length;
+                const total = checkboxes.length;
+                const progress = Math.round((checked / total) * 100);
+                
+                if (progress === 100) {
+                    alert('🎉 모든 설정이 완료되었습니다!\n이제 Google 로그인을 테스트해보세요.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

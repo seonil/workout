@@ -2,6 +2,16 @@
 class WorkoutNavigation {
     constructor() {
         this.currentPage = this.getCurrentPage();
+        this.currentUser = null;
+        this.isLoggedIn = false;
+    }
+    
+    // 사용자 정보 업데이트
+    updateUser(user) {
+        this.currentUser = user;
+        this.isLoggedIn = !!user;
+        this.updateNavigationTheme();
+        this.updateUserInfo();
     }
     
     getCurrentPage() {
@@ -24,14 +34,51 @@ class WorkoutNavigation {
         ];
         
         const navHtml = `
-            <nav class="workout-nav">
+            <nav class="workout-nav ${this.isLoggedIn ? 'logged-in' : ''}">
                 <div class="nav-container">
-                    ${navItems.map(item => this.renderNavItem(item)).join('')}
+                    <div class="nav-items">
+                        ${navItems.map(item => this.renderNavItem(item)).join('')}
+                    </div>
+                    <div class="nav-user">
+                        ${this.renderUserSection()}
+                    </div>
                 </div>
             </nav>
         `;
         
         return navHtml;
+    }
+    
+    renderUserSection() {
+        if (this.isLoggedIn) {
+            const displayName = this.currentUser.displayName || this.currentUser.email || '사용자';
+            const isAnonymous = this.currentUser.isAnonymous;
+            
+            return `
+                <div class="user-info-nav">
+                    <div class="user-avatar-nav">
+                        ${isAnonymous ? '👤' : (this.currentUser.photoURL ? 
+                            `<img src="${this.currentUser.photoURL}" alt="프로필" referrerpolicy="no-referrer">` : 
+                            displayName.charAt(0).toUpperCase())}
+                    </div>
+                    <span class="user-name-nav">${isAnonymous ? '익명' : displayName}</span>
+                    <button class="logout-btn-nav" id="nav-logout-btn" title="로그아웃">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 17v-3H9v-4h7V7l5 5-5 5M14 2a2 2 0 012 2v2h-2V4H5v16h9v-2h2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2h9z"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        } else {
+            return `
+                <button class="login-btn-nav" id="nav-login-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10a10 10 0 0 0 10-10A10 10 0 0 0 12 2Z"/>
+                    </svg>
+                    로그인
+                </button>
+            `;
+        }
     }
     
     renderNavItem(item) {
@@ -58,14 +105,60 @@ class WorkoutNavigation {
     }
     
     attachEventListeners() {
-        // 필요시 추가적인 이벤트 리스너 등록
+        // 기존 네비게이션 아이템 이벤트
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
             item.addEventListener('click', (e) => {
-                // 페이지 전환 시 데이터 동기화나 기타 로직 실행 가능
                 console.log('Navigating to:', e.currentTarget.href);
             });
         });
+        
+        // 로그인 버튼 이벤트
+        const loginBtn = document.querySelector('#nav-login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                // KPR 추적기 페이지로 이동 (로그인 화면)
+                window.location.href = 'claude.html';
+            });
+        }
+        
+        // 로그아웃 버튼 이벤트
+        const logoutBtn = document.querySelector('#nav-logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.onLogout) {
+                    this.onLogout();
+                }
+            });
+        }
+    }
+    
+    // 로그아웃 콜백 설정
+    setLogoutCallback(callback) {
+        this.onLogout = callback;
+    }
+    
+    // 네비게이션 테마 업데이트
+    updateNavigationTheme() {
+        const nav = document.querySelector('.workout-nav');
+        if (nav) {
+            if (this.isLoggedIn) {
+                nav.classList.add('logged-in');
+            } else {
+                nav.classList.remove('logged-in');
+            }
+        }
+    }
+    
+    // 사용자 정보 업데이트
+    updateUserInfo() {
+        const userSection = document.querySelector('.nav-user');
+        if (userSection) {
+            userSection.innerHTML = this.renderUserSection();
+            // 이벤트 리스너 다시 연결
+            this.attachEventListeners();
+        }
     }
 }
 
