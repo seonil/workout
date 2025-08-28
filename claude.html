@@ -378,7 +378,18 @@
                 // 로컬 데이터 매니저 초기화
                 workoutData = new WorkoutDataManager();
                 workoutData.setCloudDataManager(cloudDataManager);
-                
+
+                // 데이터 변경 감지 (workoutData가 초기화된 후)
+                if (typeof workoutData.onDataChange === 'function') {
+                    workoutData.onDataChange((event) => {
+                        console.log('Data changed:', event.detail);
+                        // 필요시 UI 업데이트
+                        if (appState.activeTab === 'workout') {
+                            renderWorkoutHistory();
+                        }
+                    });
+                }
+
                 // Firebase 로그아웃 기능 추가 설정
                 navigationManager.firebaseLogout = async () => {
                     if (cloudDataManager && cloudDataManager.signOutUser) {
@@ -1055,19 +1066,8 @@
         }
 
         // 페이지 로드 시 초기화
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeApp();
-            
-            // 데이터 변경 감지 (workoutData가 초기화된 후)
-            if (workoutData && typeof workoutData.onDataChange === 'function') {
-                workoutData.onDataChange((event) => {
-                    console.log('Data changed:', event.detail);
-                    // 필요시 UI 업데이트
-                    if (appState.activeTab === 'workout') {
-                        renderWorkoutHistory();
-                    }
-                });
-            }
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeApp();
         });
         
         // 운동 기록 저장 시 클라우드 동기화
